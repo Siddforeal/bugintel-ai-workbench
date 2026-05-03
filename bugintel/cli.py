@@ -44,6 +44,7 @@ from bugintel.core.report_draft import build_report_draft, render_report_draft_m
 from bugintel.core.validation_runbook import build_validation_runbook, render_validation_runbook_markdown
 from bugintel.core.research_state import build_research_state_from_orchestration, render_research_state_markdown
 from bugintel.core.research_state_update import build_research_state_update_plan, render_research_state_update_plan_markdown
+from bugintel.core.research_state_apply import apply_research_state_update_plan
 from bugintel.core.ai_brain import build_ai_brain_plan, render_ai_brain_plan_markdown
 from bugintel.core.brain_prompt import build_brain_prompt_package, render_brain_prompt_package_markdown
 from bugintel.core.brain_review import build_brain_review, render_brain_review_markdown
@@ -1026,6 +1027,78 @@ def ai_brain_command(
         "It does not call LLM providers, send requests, execute shell commands, launch browsers, or use Kali tools."
     )
 
+
+
+
+@app.command("research-state-apply")
+def research_state_apply_command(
+    research_state_json: Path = typer.Argument(..., help="Path to research-state JSON."),
+    update_plan: Path = typer.Option(..., "--update-plan", help="Path to research-state-update JSON."),
+    output_file: Path = typer.Option(..., "--output-file", "--output", help="Output path for updated research-state JSON."),
+    result_json: Path | None = typer.Option(None, "--result-json", help="Optional path to write full apply result JSON."),
+):
+    """Apply a research-state update plan to a local copy of research-state JSON."""
+    if not research_state_json.exists():
+        console.print(f"[bold red]Research-state JSON not found:[/bold red] {research_state_json}")
+        raise typer.Exit(code=1)
+
+    if not update_plan.exists():
+        console.print(f"[bold red]Update plan JSON not found:[/bold red] {update_plan}")
+        raise typer.Exit(code=1)
+
+    try:
+        state_data = json.loads(research_state_json.read_text(encoding="utf-8"))
+        plan_data = json.loads(update_plan.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(state_data, dict) or not isinstance(plan_data, dict):
+        console.print("[bold red]Research-state and update-plan JSON must both be objects.[/bold red]")
+        raise typer.Exit(code=2)
+
+    result = apply_research_state_update_plan(state_data, plan_data)
+    result_data = result.to_dict()
+
+    summary = Table(title="Research State Apply Result")
+    summary.add_column("Field", style="bold")
+    summary.add_column("Value")
+    summary.add_row("Target", result.target_name)
+    summary.add_row("Endpoint", result.endpoint)
+    summary.add_row("Validation result", result.validation_result)
+    summary.add_row("Patches", str(len(result.applied_patches)))
+    summary.add_row("Execution", "local-only; no network, browser, shell, Kali, tool, or LLM execution")
+    console.print(summary)
+
+    patches_table = Table(title="Applied Patches")
+    patches_table.add_column("#", justify="right")
+    patches_table.add_column("Path")
+    patches_table.add_column("Applied")
+    patches_table.add_column("New Value")
+
+    for index, patch in enumerate(result.applied_patches, start=1):
+        patches_table.add_row(
+            str(index),
+            escape(patch.path),
+            str(patch.applied),
+            escape(str(patch.new_value)),
+        )
+
+    console.print(patches_table)
+
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    output_file.write_text(json.dumps(result.updated_research_state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    console.print(f"[bold green]Saved updated research-state JSON:[/bold green] {output_file}")
+
+    if result_json:
+        result_json.parent.mkdir(parents=True, exist_ok=True)
+        result_json.write_text(json.dumps(result_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved apply result JSON:[/bold green] {result_json}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only writes a local updated copy. "
+        "It does not mutate the original file or execute tools."
+    )
 
 
 @app.command("research-state-update")
