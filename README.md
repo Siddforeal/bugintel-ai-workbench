@@ -121,6 +121,27 @@ Current checks include:
     safety-bypass instructions
     credential theft or destructive-action instructions
 
+### Research State Patch Applier
+
+Blackhole can apply a research-state update plan to a local copy of research-state JSON:
+
+    blackhole research-state-apply /tmp/research-state.json --update-plan /tmp/research-state-update.json --output-file /tmp/research-state.updated.json
+
+It can also write a full apply result JSON:
+
+    blackhole research-state-apply /tmp/research-state.json --update-plan /tmp/research-state-update.json --output-file /tmp/research-state.updated.json --result-json ./research-state-apply-result.json
+
+The applier updates a local copy only.
+
+It can apply planned changes for:
+
+- endpoint triage state
+- hypothesis status
+- artifact status
+- validation notes
+
+This command is local-only and planning-safe. It does not call LLM providers, send requests, execute shell commands, launch browsers, use Kali tools, mutate targets, bypass authorization, or execute tools.
+
 ### Research State Update Planner
 
 Blackhole can create a planning-only update plan for research-state JSON after manual validation:

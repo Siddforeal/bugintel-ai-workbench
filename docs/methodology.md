@@ -833,3 +833,28 @@ Validation results include:
 
 This remains planning-only. It does not mutate files, call LLM providers, run curl, launch browsers, make network requests, execute shell commands, use Kali tools, or bypass authorization.
 
+## Research State Patch Applier
+
+Blackhole can apply a reviewed research-state update plan to a local copy of research-state JSON.
+
+Example:
+
+    blackhole research-state-apply /tmp/research-state.json --update-plan /tmp/research-state-update.json --output-file /tmp/research-state.updated.json
+
+The patch applier is the next step after the update planner:
+
+    research-state
+    → research-state-update
+    → research-state-apply
+
+It applies only known safe paths from the update plan:
+
+- endpoint triage state
+- hypothesis status
+- artifact status
+- validation notes
+
+The original research-state file is not mutated automatically. The output is written to a separate file.
+
+This remains local-only. It does not call LLM providers, run curl, launch browsers, make network requests, execute shell commands, use Kali tools, mutate targets, bypass authorization, or execute tools.
+
