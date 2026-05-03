@@ -45,6 +45,7 @@ from bugintel.core.validation_runbook import build_validation_runbook, render_va
 from bugintel.core.research_state import build_research_state_from_orchestration, render_research_state_markdown
 from bugintel.core.research_state_update import build_research_state_update_plan, render_research_state_update_plan_markdown
 from bugintel.core.research_state_apply import apply_research_state_update_plan
+from bugintel.core.case_timeline import build_case_timeline, render_case_timeline_markdown
 from bugintel.core.ai_brain import build_ai_brain_plan, render_ai_brain_plan_markdown
 from bugintel.core.brain_prompt import build_brain_prompt_package, render_brain_prompt_package_markdown
 from bugintel.core.brain_review import build_brain_review, render_brain_review_markdown
@@ -1028,6 +1029,74 @@ def ai_brain_command(
     )
 
 
+
+
+
+@app.command("case-timeline")
+def case_timeline_command(
+    case_dir: Path = typer.Argument(..., help="Directory containing Blackhole case artifacts."),
+    output_file: Path | None = typer.Option(
+        None,
+        "--output-file",
+        "--output",
+        help="Optional Markdown file to write the case timeline.",
+    ),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        help="Optional JSON file to write the structured case timeline.",
+    ),
+):
+    """Build a planning-only case timeline from local Blackhole artifacts."""
+    if not case_dir.exists():
+        console.print(f"[bold red]Case directory not found:[/bold red] {case_dir}")
+        raise typer.Exit(code=1)
+
+    timeline = build_case_timeline(case_dir)
+    markdown = render_case_timeline_markdown(timeline)
+    data = timeline.to_dict()
+
+    summary = Table(title="Case Timeline")
+    summary.add_column("Field", style="bold")
+    summary.add_column("Value")
+    summary.add_row("Target", timeline.target_name)
+    summary.add_row("Events", str(timeline.event_count))
+    summary.add_row("Execution", "planning-only; local artifacts only")
+    console.print(summary)
+
+    events_table = Table(title="Timeline Events")
+    events_table.add_column("#", justify="right")
+    events_table.add_column("Type")
+    events_table.add_column("Title")
+    events_table.add_column("Summary")
+
+    for event in timeline.events:
+        events_table.add_row(
+            str(event.order),
+            event.event_type,
+            event.title,
+            event.summary,
+        )
+
+    console.print(events_table)
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown, encoding="utf-8")
+        console.print(f"[bold green]Saved case timeline Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case timeline JSON:[/bold green] {json_output}")
+
+    if not output_file and not json_output:
+        console.print(markdown)
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only reads local case artifacts. "
+        "It does not call LLM providers, send requests, execute shell commands, launch browsers, or use Kali tools."
+    )
 
 
 @app.command("research-state-apply")
