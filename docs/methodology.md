@@ -858,3 +858,22 @@ The original research-state file is not mutated automatically. The output is wri
 
 This remains local-only. It does not call LLM providers, run curl, launch browsers, make network requests, execute shell commands, use Kali tools, mutate targets, bypass authorization, or execute tools.
 
+## Case Timeline Builder
+
+Blackhole can turn local case artifacts into a planning-only timeline.
+
+Example:
+
+    blackhole case-timeline /tmp/blackhole-safe-brain-demo --output-file /tmp/case-timeline.md --json-output /tmp/case-timeline.json
+
+The timeline builder helps answer:
+
+- what happened in this case?
+- what was generated first?
+- what decisions were made?
+- when did the case become blocked?
+- what approval or execution gates were created?
+- what state updates were planned or applied?
+
+This remains local-only and planning-only. It does not call LLM providers, run curl, launch browsers, make network requests, execute shell commands, use Kali tools, mutate targets, bypass authorization, or execute tools.
+

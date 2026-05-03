@@ -121,6 +121,31 @@ Current checks include:
     safety-bypass instructions
     credential theft or destructive-action instructions
 
+### Case Timeline Builder
+
+Blackhole can create a planning-only case timeline from local Blackhole artifacts:
+
+    blackhole case-timeline /tmp/blackhole-safe-brain-demo --output-file /tmp/case-timeline.md --json-output /tmp/case-timeline.json
+
+The timeline builder reads known local artifacts such as:
+
+- orchestration JSON
+- research-state JSON
+- AI brain plan
+- brain prompt package
+- brain review
+- brain decision gate
+- human approval packet
+- tool request manifest
+- tool execution gate
+- brain-chat session
+- research-state update plan
+- research-state apply result
+
+It creates a chronological summary of what happened in the case.
+
+This command is local-only and planning-only. It does not call LLM providers, send requests, execute shell commands, launch browsers, use Kali tools, mutate targets, bypass authorization, or execute tools.
+
 ### Research State Patch Applier
 
 Blackhole can apply a research-state update plan to a local copy of research-state JSON:
