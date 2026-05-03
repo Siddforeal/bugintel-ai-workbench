@@ -46,6 +46,7 @@ from bugintel.core.research_state import build_research_state_from_orchestration
 from bugintel.core.research_state_update import build_research_state_update_plan, render_research_state_update_plan_markdown
 from bugintel.core.research_state_apply import apply_research_state_update_plan
 from bugintel.core.case_timeline import build_case_timeline, render_case_timeline_markdown
+from bugintel.core.case_summary import build_case_summary, render_case_summary_markdown
 from bugintel.core.ai_brain import build_ai_brain_plan, render_ai_brain_plan_markdown
 from bugintel.core.brain_prompt import build_brain_prompt_package, render_brain_prompt_package_markdown
 from bugintel.core.brain_review import build_brain_review, render_brain_review_markdown
@@ -1030,6 +1031,87 @@ def ai_brain_command(
 
 
 
+
+
+
+@app.command("case-summary")
+def case_summary_command(
+    case_timeline_json: Path = typer.Argument(..., help="Path to case-timeline JSON."),
+    output_file: Path | None = typer.Option(
+        None,
+        "--output-file",
+        "--output",
+        help="Optional Markdown file to write the case summary.",
+    ),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        help="Optional JSON file to write the structured case summary.",
+    ),
+):
+    """Build a planning-only case summary from case-timeline JSON."""
+    if not case_timeline_json.exists():
+        console.print(f"[bold red]Case timeline JSON not found:[/bold red] {case_timeline_json}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(case_timeline_json.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid case timeline JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Case timeline JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    summary_obj = build_case_summary(data)
+    markdown = render_case_summary_markdown(summary_obj)
+    summary_data = summary_obj.to_dict()
+
+    summary_table = Table(title="Case Summary")
+    summary_table.add_column("Field", style="bold")
+    summary_table.add_column("Value")
+    summary_table.add_row("Target", summary_obj.target_name)
+    summary_table.add_row("Events", str(summary_obj.event_count))
+    summary_table.add_row("Current state", summary_obj.current_state)
+    summary_table.add_row("Execution", "planning-only; local artifacts only")
+    console.print(summary_table)
+
+    points_table = Table(title="Key Points")
+    points_table.add_column("#", justify="right")
+    points_table.add_column("Point")
+
+    for index, point in enumerate(summary_obj.key_points, start=1):
+        points_table.add_row(str(index), point)
+
+    console.print(points_table)
+
+    steps_table = Table(title="Recommended Next Steps")
+    steps_table.add_column("#", justify="right")
+    steps_table.add_column("Step")
+
+    for index, step in enumerate(summary_obj.recommended_next_steps, start=1):
+        steps_table.add_row(str(index), step)
+
+    console.print(steps_table)
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown, encoding="utf-8")
+        console.print(f"[bold green]Saved case summary Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(summary_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case summary JSON:[/bold green] {json_output}")
+
+    if not output_file and not json_output:
+        console.print(markdown)
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only reads local case timeline artifacts. "
+        "It does not call LLM providers, send requests, execute shell commands, launch browsers, or use Kali tools."
+    )
 
 
 @app.command("case-timeline")
