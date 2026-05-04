@@ -46,6 +46,7 @@ from bugintel.core.research_state import build_research_state_from_orchestration
 from bugintel.core.research_state_update import build_research_state_update_plan, render_research_state_update_plan_markdown
 from bugintel.core.result_interpreter import interpret_validation_result
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
+from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
 from bugintel.core.case_timeline import build_case_timeline, render_case_timeline_markdown
 from bugintel.core.case_summary import build_case_summary, render_case_summary_markdown
@@ -1254,6 +1255,74 @@ def research_state_apply_command(
     )
 
 
+
+
+
+@app.command("result-flow")
+def result_flow_command(
+    research_state_json: Path = typer.Option(..., "--research-state", help="Path to research-state JSON."),
+    endpoint: str = typer.Option(..., "--endpoint", help="Endpoint that was manually validated."),
+    observed_status: int | None = typer.Option(None, "--observed-status", help="Observed HTTP status code."),
+    expected_status: int | None = typer.Option(None, "--expected-status", help="Expected HTTP status code."),
+    observed_body: str = typer.Option("", "--observed-body", help="Short observed response/body note."),
+    expected_body: str = typer.Option("", "--expected-body", help="Short expected response/body note."),
+    note: str = typer.Option("", "--note", help="Human validation note."),
+    updated_state: Path = typer.Option(..., "--updated-state", help="Path to write updated research-state JSON."),
+    result_json: Path | None = typer.Option(None, "--result-json", help="Optional path to write full result-flow JSON."),
+):
+    """Run local interpretation -> state update planning -> local state apply."""
+    if not research_state_json.exists():
+        console.print(f"[bold red]Research-state JSON not found:[/bold red] {research_state_json}")
+        raise typer.Exit(code=1)
+
+    try:
+        state_data = json.loads(research_state_json.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid research-state JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(state_data, dict):
+        console.print("[bold red]Research-state JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    flow = build_result_flow(
+        research_state_data=state_data,
+        endpoint=endpoint,
+        observed_status=observed_status,
+        expected_status=expected_status,
+        observed_body=observed_body,
+        expected_body=expected_body,
+        note=note,
+    )
+    flow_data = flow.to_dict()
+
+    summary = Table(title="Result Flow")
+    summary.add_column("Field", style="bold")
+    summary.add_column("Value")
+    summary.add_row("Endpoint", endpoint)
+    summary.add_row("Suggested result", flow.interpretation.suggested_result)
+    summary.add_row("Confidence", flow.interpretation.confidence)
+    summary.add_row("Update validation result", flow.update_plan.validation_result)
+    summary.add_row("Applied patches", str(len(flow.apply_result.applied_patches)))
+    summary.add_row("Execution", "local-only; no target interaction")
+    console.print(summary)
+
+    updated_state.parent.mkdir(parents=True, exist_ok=True)
+    updated_state.write_text(
+        json.dumps(flow.apply_result.updated_research_state, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    console.print(f"[bold green]Saved updated research-state JSON:[/bold green] {updated_state}")
+
+    if result_json:
+        result_json.parent.mkdir(parents=True, exist_ok=True)
+        result_json.write_text(json.dumps(flow_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result-flow JSON:[/bold green] {result_json}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only interprets a human-provided result summary and writes a local updated state copy. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
 
 
 @app.command("result-to-state-update")
