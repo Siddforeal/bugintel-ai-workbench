@@ -127,3 +127,27 @@ The review output includes:
 - local-only safety metadata
 
 The batch review command does not confirm vulnerabilities automatically. It only helps the researcher triage saved evidence before deeper manual review.
+
+## Result Evidence Review Report
+
+Render a local result evidence batch review JSON into a human-readable Markdown report:
+
+    blackhole result-evidence-review-report /tmp/result-evidence-batch-review.json --output-file /tmp/result-evidence-review-report.md
+
+The command can also write a JSON wrapper containing the rendered Markdown:
+
+    blackhole result-evidence-review-report /tmp/result-evidence-batch-review.json --output-file /tmp/result-evidence-review-report.md --json-output /tmp/result-evidence-review-report.json
+
+The report includes:
+
+- summary counts
+- supported candidates
+- rejected candidates
+- needs-more-evidence candidates
+- missing expected status count
+- endpoint-by-endpoint review items
+- suggested result, confidence, source, status comparison, signal count, and rationale
+- recommended human review checklist
+- local-only and planning-only safety framing
+
+The report renderer does not confirm vulnerabilities automatically. It only turns local review JSON into a readable Markdown artifact for human review.

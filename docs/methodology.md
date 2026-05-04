@@ -987,3 +987,38 @@ This helps the result loop:
     → result-flow
 
 The batch review command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Result Evidence Review Report
+
+Blackhole can render a normalized result evidence batch review into a human-readable Markdown report.
+
+Example:
+
+    blackhole result-evidence-review-report /tmp/result-evidence-batch-review.json --output-file /tmp/result-evidence-review-report.md
+
+This helps turn local saved evidence into a reviewable artifact after batch import and batch review.
+
+The report includes:
+
+- total evidence count
+- supported, rejected, and needs-more-evidence counts
+- missing expected status count
+- endpoint-by-endpoint review items
+- suggested result and confidence
+- source labels
+- observed and expected status values
+- signal count
+- rationale
+- recommended manual review checklist
+
+This helps the result loop:
+
+    saved result evidence folder
+    → import-result-evidence-batch
+    → review-result-evidence-batch
+    → result-evidence-review-report
+    → manual review
+    → interpret-result
+    → result-flow
+
+The report command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
