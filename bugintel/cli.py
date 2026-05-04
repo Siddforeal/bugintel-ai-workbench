@@ -46,6 +46,7 @@ from bugintel.core.research_state import build_research_state_from_orchestration
 from bugintel.core.research_state_update import build_research_state_update_plan, render_research_state_update_plan_markdown
 from bugintel.core.result_interpreter import interpret_validation_result
 from bugintel.core.result_evidence import import_result_evidence, import_result_evidence_batch, review_result_evidence_batch
+from bugintel.core.result_evidence_report import render_result_evidence_review_report
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -1549,6 +1550,73 @@ def review_result_evidence_batch_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only reviews local batch evidence. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("result-evidence-review-report")
+def result_evidence_review_report_command(
+    review_file: Path = typer.Argument(..., help="Path to result evidence batch review JSON."),
+    output_file: Path | None = typer.Option(
+        None,
+        "--output-file",
+        "--output",
+        help="Optional Markdown output path.",
+    ),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        help="Optional JSON output path containing the rendered Markdown.",
+    ),
+    title: str = typer.Option("Result Evidence Batch Review Report", "--title", help="Markdown report title."),
+    source: str = typer.Option("result-evidence-review-report", "--source", help="Report source label."),
+):
+    """Render a local result evidence batch review JSON into a planning-only Markdown report."""
+    if not review_file.exists():
+        console.print(f"[bold red]Result evidence batch review JSON not found:[/bold red] {review_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(review_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid result evidence batch review JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Result evidence batch review JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        report = render_result_evidence_review_report(data, title=title, source=source)
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid result evidence batch review report input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    report_data = report.to_dict()
+
+    table = Table(title="Result Evidence Review Report")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Review file", str(review_file))
+    table.add_row("Markdown lines", str(len(report.markdown.splitlines())))
+    table.add_row("Execution", "planning-only; local Markdown rendering only")
+    console.print(table)
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(report.markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result evidence review Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(report_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result evidence review report JSON:[/bold green] {json_output}")
+
+    if not output_file and not json_output:
+        console.print(report.markdown)
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only renders local review JSON into Markdown. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
