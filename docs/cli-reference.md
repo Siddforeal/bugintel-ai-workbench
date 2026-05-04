@@ -68,3 +68,21 @@ Suggested results:
 - needs-more-evidence
 
 The interpreter does not confirm vulnerabilities automatically. It only suggests a planning category for human review.
+
+
+## Result Evidence Importer
+
+Normalize a local result evidence JSON file:
+
+    blackhole import-result-evidence /tmp/evidence.json --json-output /tmp/normalized-result.json
+
+Example input:
+
+    {
+      "endpoint": "/api/accounts/123/users/{id}/permissions",
+      "observed_status": 200,
+      "expected_status": 403,
+      "note": "Observed foreign account private data and permission bypass."
+    }
+
+The importer normalizes fields for use with interpret-result and result-flow.

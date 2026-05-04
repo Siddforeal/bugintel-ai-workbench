@@ -900,3 +900,30 @@ This helps connect manual validation output back into the state update loop:
     → research-state-apply
 
 The interpreter does not confirm vulnerabilities by itself. It only suggests a next research-state update category for human review.
+
+
+## Result Evidence Importer
+
+Blackhole can normalize local result evidence JSON before interpretation.
+
+Example:
+
+    blackhole import-result-evidence /tmp/evidence.json --json-output /tmp/normalized-result.json
+
+The importer supports fields such as:
+
+- endpoint or url
+- observed_status or status_code
+- expected_status
+- observed_body or body
+- expected_body
+- note or notes
+
+The importer is local-only and planning-only. It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities.
+
+This helps the result loop:
+
+    saved result evidence
+    → import-result-evidence
+    → interpret-result
+    → result-flow
