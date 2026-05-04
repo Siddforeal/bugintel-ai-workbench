@@ -1022,3 +1022,39 @@ This helps the result loop:
     → result-flow
 
 The report command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Result Evidence Finding Draft
+
+Blackhole can render a reviewed local evidence batch into a candidate finding draft for human report writing.
+
+Example:
+
+    blackhole result-evidence-finding-draft /tmp/result-evidence-batch-review.json --output-file /tmp/finding-draft.md
+
+The draft selects supported candidates by default. Use --include-all when the researcher wants the draft to include rejected and needs-more-evidence observations for context.
+
+This helps the result loop:
+
+    saved result evidence folder
+    → import-result-evidence-batch
+    → review-result-evidence-batch
+    → result-evidence-review-report
+    → result-evidence-finding-draft
+    → manual validation
+    → final human-written report
+    → result-flow
+
+The finding draft includes:
+
+- candidate title placeholder
+- candidate description section
+- affected evidence items
+- manual validation checklist
+- proof-of-concept draft steps
+- impact hypothesis placeholder
+- limitations and open questions
+- local-only safety metadata
+
+The finding draft is intentionally cautious. It does not claim that a vulnerability is confirmed. A human researcher must still verify scope, authorization, reproducibility, sensitive data exposure, exploitability, and impact before submitting a report.
+
+The command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.

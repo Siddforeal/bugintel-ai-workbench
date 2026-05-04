@@ -151,3 +151,36 @@ The report includes:
 - local-only and planning-only safety framing
 
 The report renderer does not confirm vulnerabilities automatically. It only turns local review JSON into a readable Markdown artifact for human review.
+
+## Result Evidence Finding Draft
+
+Render a local result evidence batch review JSON into a candidate finding draft:
+
+    blackhole result-evidence-finding-draft /tmp/result-evidence-batch-review.json --output-file /tmp/finding-draft.md
+
+The command can also write a JSON wrapper containing the rendered Markdown:
+
+    blackhole result-evidence-finding-draft /tmp/result-evidence-batch-review.json --output-file /tmp/finding-draft.md --json-output /tmp/finding-draft.json
+
+By default, the draft includes only evidence items whose review suggestion is supported.
+
+To include rejected and needs-more-evidence items as well:
+
+    blackhole result-evidence-finding-draft /tmp/result-evidence-batch-review.json --include-all --output-file /tmp/finding-draft.md
+
+The finding draft includes:
+
+- candidate finding status
+- summary counts
+- candidate title placeholder
+- candidate description section
+- affected evidence items
+- observed and expected status values
+- review suggestion, confidence, signal count, and rationale
+- manual validation checklist
+- proof-of-concept draft steps
+- impact hypothesis placeholder
+- limitations and open questions
+- local-only and planning-only safety framing
+
+The finding draft does not confirm vulnerabilities automatically. It is a report-writing helper for human review after local evidence triage.
