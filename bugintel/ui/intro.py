@@ -36,7 +36,7 @@ UFO_ASCII = r"""
 
 @dataclass(frozen=True)
 class IntroConfig:
-    version: str = "0.37.0"
+    version: str = "0.38.0"
     force: bool = False
     clear_screen: bool = True
 
