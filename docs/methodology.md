@@ -128,7 +128,7 @@ Running `bugintel` with no command shows the UFO startup screen. This is a human
 
 ## Playwright Preview Workflow
 
-The Playwright preview workflow is part of the v0.35.0 path toward live browser execution:
+The Playwright preview workflow is part of the v0.36.0 path toward live browser execution:
 
     bugintel preview-playwright examples/target.example.yaml https://demo.example.com/dashboard --browser chromium --json-output reports/playwright-preview.json
 
