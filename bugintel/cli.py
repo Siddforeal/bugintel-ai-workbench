@@ -48,6 +48,7 @@ from bugintel.core.result_interpreter import interpret_validation_result
 from bugintel.core.result_evidence import import_result_evidence, import_result_evidence_batch, review_result_evidence_batch
 from bugintel.core.result_evidence_report import render_result_evidence_review_report
 from bugintel.core.result_evidence_finding_draft import render_result_evidence_finding_draft
+from bugintel.core.result_evidence_finding_package import build_result_evidence_finding_package
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -1692,6 +1693,66 @@ def result_evidence_finding_draft_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only renders local review JSON into a candidate draft. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("result-evidence-finding-package")
+def result_evidence_finding_package_command(
+    review_file: Path = typer.Argument(..., help="Path to result evidence batch review JSON."),
+    output_dir: Path = typer.Option(..., "--output-dir", "--output", help="Directory to write the finding package."),
+    finding_title: str = typer.Option("Candidate Finding Draft", "--title", help="Finding draft title."),
+    include_all: bool = typer.Option(False, "--include-all", help="Include rejected and needs-more-evidence items."),
+    source: str = typer.Option("result-evidence-finding-package", "--source", help="Package source label."),
+):
+    """Build a local finding package from result evidence batch review JSON."""
+    if not review_file.exists():
+        console.print(f"[bold red]Result evidence batch review JSON not found:[/bold red] {review_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(review_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid result evidence batch review JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Result evidence batch review JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        package = build_result_evidence_finding_package(
+            data,
+            finding_title=finding_title,
+            include_all=include_all,
+            source=source,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid result evidence finding package input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    for relative_name, content in package.files.items():
+        output_path = output_dir / relative_name
+        output_path.write_text(content, encoding="utf-8")
+
+    package_data = package.to_dict()
+
+    table = Table(title="Result Evidence Finding Package")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Review file", str(review_file))
+    table.add_row("Output directory", str(output_dir))
+    table.add_row("Files", str(package_data["file_count"]))
+    table.add_row("Selected evidence items", str(package.metadata["selected_item_count"]))
+    table.add_row("Execution", "planning-only; local package generation only")
+    console.print(table)
+
+    console.print(f"[bold green]Saved result evidence finding package:[/bold green] {output_dir}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only writes local package artifacts. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
