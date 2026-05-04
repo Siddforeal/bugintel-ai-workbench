@@ -44,6 +44,7 @@ from bugintel.core.report_draft import build_report_draft, render_report_draft_m
 from bugintel.core.validation_runbook import build_validation_runbook, render_validation_runbook_markdown
 from bugintel.core.research_state import build_research_state_from_orchestration, render_research_state_markdown
 from bugintel.core.research_state_update import build_research_state_update_plan, render_research_state_update_plan_markdown
+from bugintel.core.result_interpreter import interpret_validation_result
 from bugintel.core.research_state_apply import apply_research_state_update_plan
 from bugintel.core.case_timeline import build_case_timeline, render_case_timeline_markdown
 from bugintel.core.case_summary import build_case_summary, render_case_summary_markdown
@@ -1249,6 +1250,66 @@ def research_state_apply_command(
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only writes a local updated copy. "
         "It does not mutate the original file or execute tools."
+    )
+
+
+
+@app.command("interpret-result")
+def interpret_result_command(
+    endpoint: str = typer.Option(..., "--endpoint", help="Endpoint that was manually validated."),
+    observed_status: int | None = typer.Option(None, "--observed-status", help="Observed HTTP status code."),
+    expected_status: int | None = typer.Option(None, "--expected-status", help="Expected HTTP status code."),
+    observed_body: str = typer.Option("", "--observed-body", help="Short observed response/body note."),
+    expected_body: str = typer.Option("", "--expected-body", help="Short expected response/body note."),
+    note: str = typer.Option("", "--note", help="Human validation note."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Interpret a manual validation result summary."""
+    result = interpret_validation_result(
+        endpoint=endpoint,
+        observed_status=observed_status,
+        expected_status=expected_status,
+        observed_body=observed_body,
+        expected_body=expected_body,
+        note=note,
+    )
+    data = result.to_dict()
+
+    table = Table(title="Result Interpretation")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Endpoint", endpoint)
+    table.add_row("Suggested result", result.suggested_result)
+    table.add_row("Confidence", result.confidence)
+    table.add_row("Rationale", result.rationale)
+    table.add_row("Signals", str(len(result.signals)))
+    table.add_row("Execution", "planning-only; no request execution")
+    console.print(table)
+
+    signals_table = Table(title="Interpretation Signals")
+    signals_table.add_column("#", justify="right")
+    signals_table.add_column("Signal")
+    signals_table.add_column("Weight", justify="right")
+    signals_table.add_column("Reason")
+
+    for index, signal in enumerate(result.signals, start=1):
+        signals_table.add_row(
+            str(index),
+            signal.name,
+            str(signal.weight),
+            signal.reason,
+        )
+
+    console.print(signals_table)
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result interpretation JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only interprets a human-provided result summary. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
 
