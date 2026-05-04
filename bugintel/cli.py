@@ -45,7 +45,7 @@ from bugintel.core.validation_runbook import build_validation_runbook, render_va
 from bugintel.core.research_state import build_research_state_from_orchestration, render_research_state_markdown
 from bugintel.core.research_state_update import build_research_state_update_plan, render_research_state_update_plan_markdown
 from bugintel.core.result_interpreter import interpret_validation_result
-from bugintel.core.result_evidence import import_result_evidence
+from bugintel.core.result_evidence import import_result_evidence, import_result_evidence_batch
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -1447,6 +1447,51 @@ def import_result_evidence_command(
         "[bold yellow]Safety:[/bold yellow] This command only normalizes local evidence JSON. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
+
+
+@app.command("import-result-evidence-batch")
+def import_result_evidence_batch_command(
+    evidence_dir: Path = typer.Argument(..., help="Directory containing local result evidence JSON files."),
+    source: str = typer.Option("manual-json-batch", "--source", help="Evidence batch source label."),
+    pattern: str = typer.Option("*.json", "--pattern", help="Glob pattern for evidence JSON files."),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        "--output",
+        help="Optional JSON output path for normalized result evidence batch.",
+    ),
+):
+    """Normalize a directory of local result evidence JSON files."""
+    try:
+        batch = import_result_evidence_batch(evidence_dir, source=source, pattern=pattern)
+    except FileNotFoundError as exc:
+        console.print(f"[bold red]Evidence directory not found:[/bold red] {exc}")
+        raise typer.Exit(code=1)
+    except NotADirectoryError as exc:
+        console.print(f"[bold red]Evidence path is not a directory:[/bold red] {exc}")
+        raise typer.Exit(code=1)
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid result evidence batch:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    batch_data = batch.to_dict()
+
+    table = Table(title="Normalized Result Evidence Batch")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Directory", str(evidence_dir))
+    table.add_row("Pattern", pattern)
+    table.add_row("Count", str(batch_data["count"]))
+    table.add_row("Source", batch.source)
+    table.add_row("Execution", "planning-only; local evidence normalization only")
+    console.print(table)
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(batch_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved normalized result evidence batch JSON:[/bold green] {json_output}")
+    else:
+        console.print(json.dumps(batch_data, indent=2, sort_keys=True))
 
 
 @app.command("interpret-result")
