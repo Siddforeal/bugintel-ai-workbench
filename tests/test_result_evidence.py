@@ -94,3 +94,63 @@ def test_import_result_evidence_batch_rejects_invalid_json(tmp_path):
 
     with pytest.raises(ValueError):
         import_result_evidence_batch(tmp_path)
+
+
+def test_review_result_evidence_batch_summarizes_interpretations():
+    from bugintel.core.result_evidence import review_result_evidence_batch
+
+    review = review_result_evidence_batch({
+        "kind": "result_evidence_batch",
+        "evidence": [
+            {
+                "endpoint": "/api/a",
+                "observed_status": 200,
+                "expected_status": 403,
+                "note": "Observed foreign account private data and permission bypass.",
+                "source": "manual-json-batch:001.json",
+            },
+            {
+                "endpoint": "/api/b",
+                "observed_status": 403,
+                "expected_status": 403,
+                "note": "Forbidden expected behavior.",
+                "source": "manual-json-batch:002.json",
+            },
+            {
+                "endpoint": "/api/c",
+                "observed_status": 404,
+                "note": "Same as random.",
+                "source": "manual-json-batch:003.json",
+            },
+        ],
+    })
+
+    data = review.to_dict()
+
+    assert data["kind"] == "result_evidence_batch_review"
+    assert data["count"] == 3
+    assert data["supported_count"] == 1
+    assert data["rejected_count"] == 1
+    assert data["needs_more_evidence_count"] == 1
+    assert data["missing_expected_status_count"] == 1
+    assert data["endpoints"] == ["/api/a", "/api/b", "/api/c"]
+    assert data["items"][0]["suggested_result"] == "supported"
+    assert data["items"][1]["suggested_result"] == "rejected"
+    assert data["items"][2]["suggested_result"] == "needs-more-evidence"
+    assert data["safety"]["local_only"] is True
+    assert data["safety"]["network_interaction"] is False
+    assert data["safety"]["target_mutation"] is False
+
+
+def test_review_result_evidence_batch_requires_evidence_list():
+    from bugintel.core.result_evidence import review_result_evidence_batch
+
+    with pytest.raises(ValueError):
+        review_result_evidence_batch({"kind": "result_evidence_batch"})
+
+
+def test_review_result_evidence_batch_rejects_non_object_items():
+    from bugintel.core.result_evidence import review_result_evidence_batch
+
+    with pytest.raises(ValueError):
+        review_result_evidence_batch({"evidence": ["not-object"]})

@@ -45,7 +45,7 @@ from bugintel.core.validation_runbook import build_validation_runbook, render_va
 from bugintel.core.research_state import build_research_state_from_orchestration, render_research_state_markdown
 from bugintel.core.research_state_update import build_research_state_update_plan, render_research_state_update_plan_markdown
 from bugintel.core.result_interpreter import interpret_validation_result
-from bugintel.core.result_evidence import import_result_evidence, import_result_evidence_batch
+from bugintel.core.result_evidence import import_result_evidence, import_result_evidence_batch, review_result_evidence_batch
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -1492,6 +1492,65 @@ def import_result_evidence_batch_command(
         console.print(f"[bold green]Saved normalized result evidence batch JSON:[/bold green] {json_output}")
     else:
         console.print(json.dumps(batch_data, indent=2, sort_keys=True))
+
+
+@app.command("review-result-evidence-batch")
+def review_result_evidence_batch_command(
+    batch_file: Path = typer.Argument(..., help="Path to normalized result evidence batch JSON."),
+    source: str = typer.Option("result-evidence-batch-review", "--source", help="Batch review source label."),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        "--output",
+        help="Optional JSON output path for result evidence batch review.",
+    ),
+):
+    """Review a normalized result evidence batch using planning-only interpretation."""
+    if not batch_file.exists():
+        console.print(f"[bold red]Result evidence batch JSON not found:[/bold red] {batch_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(batch_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid result evidence batch JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Result evidence batch JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        review = review_result_evidence_batch(data, source=source)
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid result evidence batch review input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    review_data = review.to_dict()
+
+    table = Table(title="Result Evidence Batch Review")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Batch file", str(batch_file))
+    table.add_row("Count", str(review_data["count"]))
+    table.add_row("Supported", str(review_data["supported_count"]))
+    table.add_row("Rejected", str(review_data["rejected_count"]))
+    table.add_row("Needs more evidence", str(review_data["needs_more_evidence_count"]))
+    table.add_row("Missing expected status", str(review_data["missing_expected_status_count"]))
+    table.add_row("Execution", "planning-only; local batch review only")
+    console.print(table)
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(review_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result evidence batch review JSON:[/bold green] {json_output}")
+    else:
+        console.print(json.dumps(review_data, indent=2, sort_keys=True))
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only reviews local batch evidence. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
 
 
 @app.command("interpret-result")

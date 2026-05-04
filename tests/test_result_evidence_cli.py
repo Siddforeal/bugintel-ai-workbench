@@ -124,3 +124,75 @@ def test_import_result_evidence_batch_cli_invalid_json_exits_nonzero(tmp_path):
 
     assert result.exit_code == 2
     assert "Invalid result evidence batch" in result.output
+
+
+def test_review_result_evidence_batch_cli_writes_json(tmp_path):
+    batch_file = tmp_path / "batch.json"
+    output_file = tmp_path / "review.json"
+
+    batch_file.write_text(json.dumps({
+        "kind": "result_evidence_batch",
+        "evidence": [
+            {
+                "endpoint": "/api/a",
+                "observed_status": 200,
+                "expected_status": 403,
+                "note": "Observed foreign account private data and permission bypass.",
+            },
+            {
+                "endpoint": "/api/b",
+                "observed_status": 403,
+                "expected_status": 403,
+                "note": "Forbidden expected behavior.",
+            },
+        ],
+    }))
+
+    result = runner.invoke(
+        app,
+        [
+            "review-result-evidence-batch",
+            str(batch_file),
+            "--json-output",
+            str(output_file),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Result Evidence Batch Review" in result.output
+    assert output_file.exists()
+
+    data = json.loads(output_file.read_text())
+    assert data["kind"] == "result_evidence_batch_review"
+    assert data["count"] == 2
+    assert data["supported_count"] == 1
+    assert data["rejected_count"] == 1
+    assert data["safety"]["local_only"] is True
+    assert data["safety"]["network_interaction"] is False
+
+
+def test_review_result_evidence_batch_cli_missing_file_exits_nonzero(tmp_path):
+    result = runner.invoke(app, ["review-result-evidence-batch", str(tmp_path / "missing.json")])
+
+    assert result.exit_code == 1
+    assert "Result evidence batch JSON not found" in result.output
+
+
+def test_review_result_evidence_batch_cli_invalid_json_exits_nonzero(tmp_path):
+    batch_file = tmp_path / "bad.json"
+    batch_file.write_text("{not json")
+
+    result = runner.invoke(app, ["review-result-evidence-batch", str(batch_file)])
+
+    assert result.exit_code == 2
+    assert "Invalid result evidence batch JSON" in result.output
+
+
+def test_review_result_evidence_batch_cli_missing_evidence_exits_nonzero(tmp_path):
+    batch_file = tmp_path / "batch.json"
+    batch_file.write_text(json.dumps({"kind": "result_evidence_batch"}))
+
+    result = runner.invoke(app, ["review-result-evidence-batch", str(batch_file)])
+
+    assert result.exit_code == 2
+    assert "Invalid result evidence batch review input" in result.output
