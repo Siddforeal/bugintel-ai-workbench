@@ -118,6 +118,7 @@ Every future execution layer should require explicit human approval, confirmed s
 
 Detailed documentation lives in `docs/`.
 
+- [CLI Reference](docs/cli-reference.md)
 - [Architecture](docs/architecture.md)
 - [Methodology](docs/methodology.md)
 - [Threat Model](docs/threat_model.md)
