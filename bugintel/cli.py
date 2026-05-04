@@ -45,6 +45,7 @@ from bugintel.core.validation_runbook import build_validation_runbook, render_va
 from bugintel.core.research_state import build_research_state_from_orchestration, render_research_state_markdown
 from bugintel.core.research_state_update import build_research_state_update_plan, render_research_state_update_plan_markdown
 from bugintel.core.result_interpreter import interpret_validation_result
+from bugintel.core.result_evidence import import_result_evidence
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -1387,6 +1388,64 @@ def result_to_state_update_command(
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only converts interpretation into a reviewable state-update plan. "
         "It does not mutate research-state files automatically."
+    )
+
+
+
+@app.command("import-result-evidence")
+def import_result_evidence_command(
+    evidence_file: Path = typer.Argument(..., help="Path to local result evidence JSON."),
+    source: str = typer.Option("manual-json", "--source", help="Evidence source label."),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        "--output",
+        help="Optional JSON output path for normalized result evidence.",
+    ),
+):
+    """Normalize local result evidence JSON for interpret-result/result-flow."""
+    if not evidence_file.exists():
+        console.print(f"[bold red]Evidence JSON not found:[/bold red] {evidence_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(evidence_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid evidence JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Evidence JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        evidence = import_result_evidence(data, source=source)
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid result evidence:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    evidence_data = evidence.to_dict()
+
+    table = Table(title="Normalized Result Evidence")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Endpoint", escape(evidence.endpoint))
+    table.add_row("Observed status", str(evidence.observed_status))
+    table.add_row("Expected status", str(evidence.expected_status))
+    table.add_row("Source", evidence.source)
+    table.add_row("Execution", "planning-only; local evidence normalization only")
+    console.print(table)
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(evidence_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved normalized result evidence JSON:[/bold green] {json_output}")
+    else:
+        console.print(json.dumps(evidence_data, indent=2, sort_keys=True))
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only normalizes local evidence JSON. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
 
