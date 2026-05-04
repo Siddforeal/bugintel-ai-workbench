@@ -45,6 +45,7 @@ from bugintel.core.validation_runbook import build_validation_runbook, render_va
 from bugintel.core.research_state import build_research_state_from_orchestration, render_research_state_markdown
 from bugintel.core.research_state_update import build_research_state_update_plan, render_research_state_update_plan_markdown
 from bugintel.core.result_interpreter import interpret_validation_result
+from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.research_state_apply import apply_research_state_update_plan
 from bugintel.core.case_timeline import build_case_timeline, render_case_timeline_markdown
 from bugintel.core.case_summary import build_case_summary, render_case_summary_markdown
@@ -1252,6 +1253,72 @@ def research_state_apply_command(
         "It does not mutate the original file or execute tools."
     )
 
+
+
+
+@app.command("result-to-state-update")
+def result_to_state_update_command(
+    research_state_json: Path = typer.Option(..., "--research-state", help="Path to research-state JSON."),
+    interpretation_json: Path = typer.Option(..., "--interpretation", help="Path to interpret-result JSON."),
+    note: str = typer.Option("", "--note", help="Optional human override note."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Build a research-state update plan from result interpretation JSON."""
+    if not research_state_json.exists():
+        console.print(f"[bold red]Research-state JSON not found:[/bold red] {research_state_json}")
+        raise typer.Exit(code=1)
+
+    if not interpretation_json.exists():
+        console.print(f"[bold red]Interpretation JSON not found:[/bold red] {interpretation_json}")
+        raise typer.Exit(code=1)
+
+    try:
+        state_data = json.loads(research_state_json.read_text(encoding="utf-8"))
+        interpretation_data = json.loads(interpretation_json.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(state_data, dict) or not isinstance(interpretation_data, dict):
+        console.print("[bold red]Research-state and interpretation JSON must both be objects.[/bold red]")
+        raise typer.Exit(code=2)
+
+    plan = build_update_plan_from_interpretation(
+        research_state_data=state_data,
+        interpretation_data=interpretation_data,
+        note=note,
+    )
+    markdown = render_research_state_update_plan_markdown(plan)
+    plan_data = plan.to_dict()
+
+    table = Table(title="Result to State Update")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Target", plan.target_name)
+    table.add_row("Endpoint", plan.endpoint)
+    table.add_row("Validation result", plan.validation_result)
+    table.add_row("Actions", str(len(plan.actions)))
+    table.add_row("Execution", "planning-only; no state mutation or tool execution")
+    console.print(table)
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown, encoding="utf-8")
+        console.print(f"[bold green]Saved state update Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(plan_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved state update JSON:[/bold green] {json_output}")
+
+    if not output_file and not json_output:
+        console.print(markdown)
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only converts interpretation into a reviewable state-update plan. "
+        "It does not mutate research-state files automatically."
+    )
 
 
 @app.command("interpret-result")
