@@ -86,3 +86,20 @@ Example input:
     }
 
 The importer normalizes fields for use with interpret-result and result-flow.
+
+## Result Evidence Batch Importer
+
+Normalize a directory of local result evidence JSON files:
+
+    blackhole import-result-evidence-batch /tmp/evidence-folder --json-output /tmp/result-evidence-batch.json
+
+The batch importer reads matching local JSON files, normalizes each evidence object, and writes one planning-only batch result.
+
+Useful options:
+
+- --pattern "*.json"
+- --source manual-json-batch
+- --json-output /tmp/result-evidence-batch.json
+
+The batch importer remains local-only and planning-only. It does not send requests, run curl, launch browsers, execute tools, call LLM providers, mutate targets, or confirm vulnerabilities.
+

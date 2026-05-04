@@ -927,3 +927,32 @@ This helps the result loop:
     → import-result-evidence
     → interpret-result
     → result-flow
+
+## Result Evidence Batch Importer
+
+Blackhole can normalize a folder of saved local result evidence JSON files into one batch object.
+
+Example:
+
+    blackhole import-result-evidence-batch /tmp/evidence-folder --json-output /tmp/result-evidence-batch.json
+
+This is useful when a researcher has multiple manual observations from separate endpoints or test cases and wants to preserve them in a consistent structure before interpretation.
+
+The batch importer supports:
+
+- directory-based evidence import
+- glob pattern selection with --pattern
+- source labeling with --source
+- normalized evidence entries
+- local-only safety metadata
+
+This helps the result loop:
+
+    saved result evidence folder
+    → import-result-evidence-batch
+    → review normalized batch
+    → import-result-evidence or interpret-result on selected observations
+    → result-flow
+
+The batch importer does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
