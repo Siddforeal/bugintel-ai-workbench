@@ -53,3 +53,18 @@ Current safe default:
 - no target mutation
 - no authorization bypass
 - no confirmed vulnerability claims without evidence
+
+
+## Result Interpretation
+
+Interpret a human-provided validation result summary:
+
+    blackhole interpret-result --endpoint "/api/accounts/123/users/{id}/permissions" --observed-status 200 --expected-status 403 --note "Observed foreign account private data and permission bypass." --json-output /tmp/result-interpretation.json
+
+Suggested results:
+
+- supported
+- rejected
+- needs-more-evidence
+
+The interpreter does not confirm vulnerabilities automatically. It only suggests a planning category for human review.

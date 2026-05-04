@@ -877,3 +877,26 @@ The timeline builder helps answer:
 
 This remains local-only and planning-only. It does not call LLM providers, run curl, launch browsers, make network requests, execute shell commands, use Kali tools, mutate targets, bypass authorization, or execute tools.
 
+
+## Result Interpreter
+
+Blackhole can interpret local, human-provided validation result summaries.
+
+Example:
+
+    blackhole interpret-result --endpoint "/api/accounts/123/users/{id}/permissions" --observed-status 200 --expected-status 403 --note "Observed foreign account private data and permission bypass." --json-output /tmp/result-interpretation.json
+
+The interpreter produces a planning-only suggestion:
+
+- supported
+- rejected
+- needs-more-evidence
+
+This helps connect manual validation output back into the state update loop:
+
+    manual validation result
+    → interpret-result
+    → research-state-update
+    → research-state-apply
+
+The interpreter does not confirm vulnerabilities by itself. It only suggests a next research-state update category for human review.
