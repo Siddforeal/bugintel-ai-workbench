@@ -956,3 +956,34 @@ This helps the result loop:
 
 The batch importer does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
 
+## Result Evidence Batch Review
+
+Blackhole can review a normalized local result evidence batch and produce a planning-only triage summary.
+
+Example:
+
+    blackhole review-result-evidence-batch /tmp/result-evidence-batch.json --json-output /tmp/result-evidence-batch-review.json
+
+This is useful after importing a folder of saved observations with import-result-evidence-batch. The review step helps identify which observations look supported, rejected, or still need more evidence.
+
+The batch review output includes:
+
+- supported candidates
+- rejected candidates
+- needs-more-evidence candidates
+- missing expected status count
+- endpoint list
+- per-item suggested result
+- confidence and rationale
+- local-only safety metadata
+
+This helps the result loop:
+
+    saved result evidence folder
+    → import-result-evidence-batch
+    → review-result-evidence-batch
+    → select observations for manual review
+    → interpret-result
+    → result-flow
+
+The batch review command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.

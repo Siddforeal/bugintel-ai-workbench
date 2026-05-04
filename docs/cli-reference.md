@@ -103,3 +103,27 @@ Useful options:
 
 The batch importer remains local-only and planning-only. It does not send requests, run curl, launch browsers, execute tools, call LLM providers, mutate targets, or confirm vulnerabilities.
 
+## Result Evidence Batch Review
+
+Review a normalized local result evidence batch:
+
+    blackhole review-result-evidence-batch /tmp/result-evidence-batch.json --json-output /tmp/result-evidence-batch-review.json
+
+The review command summarizes local batch evidence into planning-only categories:
+
+- supported
+- rejected
+- needs-more-evidence
+
+The review output includes:
+
+- total evidence count
+- endpoint list
+- supported count
+- rejected count
+- needs-more-evidence count
+- missing expected status count
+- per-item suggested result and confidence
+- local-only safety metadata
+
+The batch review command does not confirm vulnerabilities automatically. It only helps the researcher triage saved evidence before deeper manual review.
