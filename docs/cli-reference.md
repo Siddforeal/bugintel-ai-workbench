@@ -184,3 +184,25 @@ The finding draft includes:
 - local-only and planning-only safety framing
 
 The finding draft does not confirm vulnerabilities automatically. It is a report-writing helper for human review after local evidence triage.
+
+## Result Evidence Finding Package
+
+Build a local finding package from result evidence batch review JSON:
+
+    blackhole result-evidence-finding-package /tmp/result-evidence-batch-review.json --output-dir /tmp/finding-package
+
+The package contains:
+
+- finding-draft.md
+- review-report.md
+- submission-checklist.md
+- metadata.json
+- manifest.json
+
+By default, the package includes only evidence items whose review suggestion is supported.
+
+To include rejected and needs-more-evidence items as well:
+
+    blackhole result-evidence-finding-package /tmp/result-evidence-batch-review.json --include-all --output-dir /tmp/finding-package
+
+The package builder remains local-only and planning-only. It creates review artifacts for human validation and does not confirm vulnerabilities automatically.

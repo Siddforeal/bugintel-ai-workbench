@@ -1058,3 +1058,35 @@ The finding draft includes:
 The finding draft is intentionally cautious. It does not claim that a vulnerability is confirmed. A human researcher must still verify scope, authorization, reproducibility, sensitive data exposure, exploitability, and impact before submitting a report.
 
 The command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Result Evidence Finding Package
+
+Blackhole can build a local finding package from a reviewed evidence batch.
+
+Example:
+
+    blackhole result-evidence-finding-package /tmp/result-evidence-batch-review.json --output-dir /tmp/finding-package
+
+The package includes:
+
+- finding-draft.md
+- review-report.md
+- submission-checklist.md
+- metadata.json
+- manifest.json
+
+This helps the result evidence workflow:
+
+    saved result evidence folder
+    → import-result-evidence-batch
+    → review-result-evidence-batch
+    → result-evidence-review-report
+    → result-evidence-finding-draft
+    → result-evidence-finding-package
+    → manual validation
+    → final human-written report
+    → result-flow
+
+The package is designed as a local review bundle, not a submission replacement. A human researcher must still validate scope, authorization, reproducibility, sensitive data exposure, exploitability, and impact before reporting.
+
+The command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
