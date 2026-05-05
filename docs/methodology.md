@@ -1090,3 +1090,38 @@ This helps the result evidence workflow:
 The package is designed as a local review bundle, not a submission replacement. A human researcher must still validate scope, authorization, reproducibility, sensitive data exposure, exploitability, and impact before reporting.
 
 The command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Evidence-to-Hypothesis Engine
+
+Blackhole can generate planning-only security hypotheses from reviewed local result evidence.
+
+Example:
+
+    blackhole result-evidence-hypothesis /tmp/result-evidence-batch-review.json --output-file /tmp/hypotheses.md --json-output /tmp/hypotheses.json
+
+This is the first layer that turns saved evidence into structured security reasoning. It does not confirm vulnerabilities; it suggests what the evidence may indicate and what manual tests should come next.
+
+The hypothesis engine can identify candidate classes such as:
+
+- object or tenant authorization boundary candidate
+- cross-account or cross-tenant access candidate
+- information disclosure candidate
+- authorization bypass candidate
+- likely expected blocking or false positive
+- needs more evidence
+
+This helps the result evidence workflow:
+
+    saved result evidence folder
+    → import-result-evidence-batch
+    → review-result-evidence-batch
+    → result-evidence-hypothesis
+    → manual validation planner
+    → result-evidence-review-report
+    → result-evidence-finding-draft
+    → result-evidence-finding-package
+    → final human-written report
+
+The engine also produces safe next manual tests such as own-object baseline, second-account behavior, random-object baseline, role checks, and raw request/response preservation.
+
+The command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.

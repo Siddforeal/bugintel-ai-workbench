@@ -206,3 +206,34 @@ To include rejected and needs-more-evidence items as well:
     blackhole result-evidence-finding-package /tmp/result-evidence-batch-review.json --include-all --output-dir /tmp/finding-package
 
 The package builder remains local-only and planning-only. It creates review artifacts for human validation and does not confirm vulnerabilities automatically.
+
+## Result Evidence Hypothesis
+
+Generate planning-only security hypotheses from local result evidence batch review JSON:
+
+    blackhole result-evidence-hypothesis /tmp/result-evidence-batch-review.json --output-file /tmp/hypotheses.md --json-output /tmp/hypotheses.json
+
+Generate hypotheses only for supported review items:
+
+    blackhole result-evidence-hypothesis /tmp/result-evidence-batch-review.json --supported-only --json-output /tmp/hypotheses.json
+
+The hypothesis engine produces:
+
+- endpoint-level hypothesis class
+- confidence
+- evidence strength
+- severity hint
+- rationale
+- supporting signals
+- safe next manual tests
+
+Example hypothesis classes include:
+
+- object-or-tenant-authorization-boundary-candidate
+- cross-account-or-cross-tenant-access-candidate
+- information-disclosure-candidate
+- authorization-bypass-candidate
+- likely-expected-blocking-or-false-positive
+- needs-more-evidence
+
+The hypothesis engine remains local-only and planning-only. It does not send requests, run curl, launch browsers, execute tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
