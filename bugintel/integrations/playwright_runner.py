@@ -1,7 +1,7 @@
 """
 Browser Action Planner for Blackhole AI Workbench.
 
-v0.42.0 foundation for browser automation.
+v0.43.0 foundation for browser automation.
 
 This module does not launch a browser yet. It creates safe, reviewable browser
 action plans and capture result models that future Playwright/Chrome/Firefox
