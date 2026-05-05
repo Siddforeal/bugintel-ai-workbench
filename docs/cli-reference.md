@@ -237,3 +237,26 @@ Example hypothesis classes include:
 - needs-more-evidence
 
 The hypothesis engine remains local-only and planning-only. It does not send requests, run curl, launch browsers, execute tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Result Evidence Validation Plan
+
+Build a planning-only manual validation plan from local result evidence hypotheses:
+
+    blackhole result-evidence-validation-plan /tmp/hypotheses.json --output-file /tmp/validation-plan.md --json-output /tmp/validation-plan.json
+
+Generate plans only for high and medium-high priority hypotheses:
+
+    blackhole result-evidence-validation-plan /tmp/hypotheses.json --high-priority-only --json-output /tmp/validation-plan.json
+
+The validation planner produces:
+
+- endpoint-level manual validation plans
+- priority classification
+- step-by-step manual checks
+- expected evidence for each step
+- safety notes for each step
+- stop conditions
+- report-readiness checks
+- local-only and planning-only safety metadata
+
+The validation planner does not run tests automatically. It only converts local hypotheses into a safe manual validation plan for a human researcher.

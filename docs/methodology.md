@@ -1125,3 +1125,37 @@ This helps the result evidence workflow:
 The engine also produces safe next manual tests such as own-object baseline, second-account behavior, random-object baseline, role checks, and raw request/response preservation.
 
 The command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Manual Validation Planner
+
+Blackhole can turn local evidence hypotheses into structured manual validation plans.
+
+Example:
+
+    blackhole result-evidence-validation-plan /tmp/hypotheses.json --output-file /tmp/validation-plan.md --json-output /tmp/validation-plan.json
+
+This is the layer after the Evidence-to-Hypothesis Engine. It helps the researcher move from “what might this evidence mean?” to “what safe manual checks should I perform next?”
+
+The planner generates:
+
+- prioritized validation plans
+- manual validation steps
+- expected evidence per step
+- safety notes
+- stop conditions
+- report-readiness checks
+
+This helps the result evidence workflow:
+
+    saved result evidence folder
+    → import-result-evidence-batch
+    → review-result-evidence-batch
+    → result-evidence-hypothesis
+    → result-evidence-validation-plan
+    → manual evidence capture
+    → result-evidence-review-report
+    → result-evidence-finding-draft
+    → result-evidence-finding-package
+    → final human-written report
+
+The command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
