@@ -279,3 +279,25 @@ The case summary identifies:
 - local-only and planning-only safety metadata
 
 The case summary does not confirm vulnerabilities automatically. It summarizes local validation plans so a human researcher can decide what to validate next.
+
+## Local Research Chat
+
+Ask a local research question against a result evidence case summary JSON:
+
+    blackhole case-chat /tmp/case-summary.json --question "what should I test next?"
+
+Write the answer as JSON:
+
+    blackhole case-chat /tmp/case-summary.json --question "what is strongest?" --json-output /tmp/case-chat-answer.json
+
+Supported question styles in v1 include:
+
+- what should I test next?
+- what is strongest?
+- what is weak?
+- is this report ready?
+- what evidence is missing?
+- what should I not claim?
+- summarize this case
+
+The local research chat answers only from local case-summary JSON. It is deterministic, local-only, and planning-only. It does not call LLM providers, send requests, execute tools, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.

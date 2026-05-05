@@ -1192,3 +1192,40 @@ This helps the result evidence workflow:
     → final human-written report
 
 The command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Local Research Chat
+
+Blackhole can answer simple local research questions from a result evidence case summary.
+
+Example:
+
+    blackhole case-chat /tmp/case-summary.json --question "what should I test next?"
+
+This is the first deterministic chat layer in the result evidence workflow. It does not use an LLM provider. It reads the local case summary and answers from saved fields such as strongest candidates, weak or rejected candidates, missing evidence, readiness, priority, and next actions.
+
+Supported v1 question styles include:
+
+- what should I test next?
+- what is strongest?
+- what is weak or false positive?
+- is this report ready?
+- what evidence is missing?
+- what should I not claim?
+- summarize this case
+
+This helps the result evidence workflow:
+
+    saved result evidence folder
+    → import-result-evidence-batch
+    → review-result-evidence-batch
+    → result-evidence-hypothesis
+    → result-evidence-validation-plan
+    → result-evidence-case-summary
+    → case-chat
+    → manual evidence capture
+    → result-evidence-review-report
+    → result-evidence-finding-draft
+    → result-evidence-finding-package
+    → final human-written report
+
+The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
