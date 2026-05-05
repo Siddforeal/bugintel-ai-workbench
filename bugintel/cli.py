@@ -49,6 +49,7 @@ from bugintel.core.result_evidence import import_result_evidence, import_result_
 from bugintel.core.result_evidence_report import render_result_evidence_review_report
 from bugintel.core.result_evidence_finding_draft import render_result_evidence_finding_draft
 from bugintel.core.result_evidence_finding_package import build_result_evidence_finding_package
+from bugintel.core.result_evidence_hypothesis import generate_result_evidence_hypotheses
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -1753,6 +1754,79 @@ def result_evidence_finding_package_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only writes local package artifacts. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("result-evidence-hypothesis")
+def result_evidence_hypothesis_command(
+    review_file: Path = typer.Argument(..., help="Path to result evidence batch review JSON."),
+    supported_only: bool = typer.Option(False, "--supported-only", help="Generate hypotheses only for supported review items."),
+    output_file: Path | None = typer.Option(
+        None,
+        "--output-file",
+        "--output",
+        help="Optional Markdown output path.",
+    ),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        help="Optional JSON output path.",
+    ),
+    source: str = typer.Option("result-evidence-hypothesis", "--source", help="Hypothesis source label."),
+):
+    """Generate planning-only security hypotheses from local result evidence review JSON."""
+    if not review_file.exists():
+        console.print(f"[bold red]Result evidence batch review JSON not found:[/bold red] {review_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(review_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid result evidence batch review JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Result evidence batch review JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        hypotheses = generate_result_evidence_hypotheses(
+            data,
+            supported_only=supported_only,
+            source=source,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid result evidence hypothesis input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    hypothesis_data = hypotheses.to_dict()
+    markdown = hypotheses.to_markdown()
+
+    table = Table(title="Result Evidence Hypotheses")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Review file", str(review_file))
+    table.add_row("Hypotheses", str(hypothesis_data["count"]))
+    table.add_row("Supported only", str(supported_only))
+    table.add_row("Execution", "planning-only; local hypothesis generation only")
+    console.print(table)
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result evidence hypotheses Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(hypothesis_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result evidence hypotheses JSON:[/bold green] {json_output}")
+
+    if not output_file and not json_output:
+        console.print(markdown)
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only generates planning-only local hypotheses. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
