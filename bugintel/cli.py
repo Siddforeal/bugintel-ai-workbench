@@ -50,6 +50,7 @@ from bugintel.core.result_evidence_report import render_result_evidence_review_r
 from bugintel.core.result_evidence_finding_draft import render_result_evidence_finding_draft
 from bugintel.core.result_evidence_finding_package import build_result_evidence_finding_package
 from bugintel.core.result_evidence_hypothesis import generate_result_evidence_hypotheses
+from bugintel.core.result_evidence_validation_plan import build_result_evidence_validation_plan
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -1827,6 +1828,79 @@ def result_evidence_hypothesis_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only generates planning-only local hypotheses. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("result-evidence-validation-plan")
+def result_evidence_validation_plan_command(
+    hypothesis_file: Path = typer.Argument(..., help="Path to result evidence hypothesis JSON."),
+    high_priority_only: bool = typer.Option(False, "--high-priority-only", help="Include only high and medium-high priority plans."),
+    output_file: Path | None = typer.Option(
+        None,
+        "--output-file",
+        "--output",
+        help="Optional Markdown output path.",
+    ),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        help="Optional JSON output path.",
+    ),
+    source: str = typer.Option("result-evidence-validation-plan", "--source", help="Validation plan source label."),
+):
+    """Build a planning-only manual validation plan from result evidence hypotheses."""
+    if not hypothesis_file.exists():
+        console.print(f"[bold red]Result evidence hypothesis JSON not found:[/bold red] {hypothesis_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(hypothesis_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid result evidence hypothesis JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Result evidence hypothesis JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        plan = build_result_evidence_validation_plan(
+            data,
+            high_priority_only=high_priority_only,
+            source=source,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid result evidence validation plan input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    plan_data = plan.to_dict()
+    markdown = plan.to_markdown()
+
+    table = Table(title="Result Evidence Validation Plan")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Hypothesis file", str(hypothesis_file))
+    table.add_row("Plans", str(plan_data["count"]))
+    table.add_row("High priority only", str(high_priority_only))
+    table.add_row("Execution", "planning-only; local validation planning only")
+    console.print(table)
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result evidence validation plan Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(plan_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result evidence validation plan JSON:[/bold green] {json_output}")
+
+    if not output_file and not json_output:
+        console.print(markdown)
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only generates a local manual validation plan. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
