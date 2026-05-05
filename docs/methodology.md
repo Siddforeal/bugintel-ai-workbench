@@ -1159,3 +1159,36 @@ This helps the result evidence workflow:
     → final human-written report
 
 The command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Case Intelligence Summary
+
+Blackhole can summarize a local validation plan into a case-level intelligence view.
+
+Example:
+
+    blackhole result-evidence-case-summary /tmp/validation-plan.json --output-file /tmp/case-summary.md --json-output /tmp/case-summary.json
+
+This is the layer after the Manual Validation Planner. It helps the researcher understand the whole case at a glance:
+
+- strongest candidates
+- weak or rejected candidates
+- likely false positives
+- missing evidence
+- next actions
+- report-readiness signals
+
+This helps the result evidence workflow:
+
+    saved result evidence folder
+    → import-result-evidence-batch
+    → review-result-evidence-batch
+    → result-evidence-hypothesis
+    → result-evidence-validation-plan
+    → result-evidence-case-summary
+    → manual evidence capture
+    → result-evidence-review-report
+    → result-evidence-finding-draft
+    → result-evidence-finding-package
+    → final human-written report
+
+The command remains local-only and planning-only. It does not send requests, run curl, launch browsers, use Kali tools, call LLM providers, mutate targets, bypass authorization, or confirm vulnerabilities.

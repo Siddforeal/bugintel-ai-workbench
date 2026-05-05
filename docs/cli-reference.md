@@ -260,3 +260,22 @@ The validation planner produces:
 - local-only and planning-only safety metadata
 
 The validation planner does not run tests automatically. It only converts local hypotheses into a safe manual validation plan for a human researcher.
+
+## Result Evidence Case Summary
+
+Build a case-level intelligence summary from local result evidence validation plan JSON:
+
+    blackhole result-evidence-case-summary /tmp/validation-plan.json --output-file /tmp/case-summary.md --json-output /tmp/case-summary.json
+
+The case summary identifies:
+
+- strongest candidates
+- weak or likely false-positive candidates
+- priority counts
+- readiness counts
+- missing evidence
+- next actions
+- case-level next steps
+- local-only and planning-only safety metadata
+
+The case summary does not confirm vulnerabilities automatically. It summarizes local validation plans so a human researcher can decide what to validate next.
