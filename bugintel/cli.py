@@ -54,6 +54,7 @@ from bugintel.core.result_evidence_validation_plan import build_result_evidence_
 from bugintel.core.result_evidence_case_summary import build_result_evidence_case_summary
 from bugintel.core.result_evidence_chat import answer_case_question
 from bugintel.core.result_evidence_chat_session import append_case_chat_turn_to_file
+from bugintel.core.result_evidence_priority_ranking import build_result_evidence_priority_ranking
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -2053,6 +2054,83 @@ def case_chat_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only answers from local case-summary JSON. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("result-evidence-priority-ranking")
+def result_evidence_priority_ranking_command(
+    case_summary_file: Path = typer.Argument(..., help="Path to result evidence case summary JSON."),
+    include_weak: bool = typer.Option(True, "--include-weak/--exclude-weak", help="Include weak or likely false-positive candidates."),
+    output_file: Path | None = typer.Option(
+        None,
+        "--output-file",
+        "--output",
+        help="Optional Markdown output path.",
+    ),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        help="Optional JSON output path.",
+    ),
+    source: str = typer.Option("result-evidence-priority-ranking", "--source", help="Priority ranking source label."),
+):
+    """Rank local case-summary candidates by priority, readiness, and evidence strength."""
+    if not case_summary_file.exists():
+        console.print(f"[bold red]Case summary JSON not found:[/bold red] {case_summary_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(case_summary_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid case summary JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Case summary JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        ranking = build_result_evidence_priority_ranking(
+            data,
+            include_weak=include_weak,
+            source=source,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid result evidence priority ranking input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    ranking_data = ranking.to_dict()
+    markdown = ranking.to_markdown()
+
+    table = Table(title="Result Evidence Priority Ranking")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Case summary", str(case_summary_file))
+    table.add_row("Candidates", str(ranking_data["count"]))
+    table.add_row("Include weak", str(include_weak))
+    table.add_row("Execution", "planning-only; local ranking only")
+    console.print(table)
+
+    if ranking_data["top_candidate"]:
+        top = ranking_data["top_candidate"]
+        console.print(f"[bold green]Top candidate:[/bold green] {top['endpoint']} score={top['score']}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result evidence priority ranking Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(ranking_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result evidence priority ranking JSON:[/bold green] {json_output}")
+
+    if not output_file and not json_output:
+        console.print(markdown)
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only ranks local case-summary candidates. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
