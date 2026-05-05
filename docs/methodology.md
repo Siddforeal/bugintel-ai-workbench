@@ -1229,3 +1229,30 @@ This helps the result evidence workflow:
     → final human-written report
 
 The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Local Research Chat Session Memory
+
+Blackhole can persist deterministic local case-chat turns to a JSON session file.
+
+Example:
+
+    blackhole case-chat /tmp/case-summary.json --question "what should I test next?" --session-file /tmp/case-chat-session.json
+
+The session file accumulates:
+
+- questions
+- answers
+- intents
+- cited endpoints
+- next actions
+- safety metadata
+
+This helps the result evidence workflow:
+
+    result-evidence-case-summary
+    → case-chat
+    → local session memory
+    → follow-up questions
+    → manual evidence capture
+
+The session memory is intentionally local-only and deterministic. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.

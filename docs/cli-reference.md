@@ -301,3 +301,24 @@ Supported question styles in v1 include:
 - summarize this case
 
 The local research chat answers only from local case-summary JSON. It is deterministic, local-only, and planning-only. It does not call LLM providers, send requests, execute tools, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Local Research Chat Session Memory
+
+Append local case-chat turns to a deterministic JSON session file:
+
+    blackhole case-chat /tmp/case-summary.json --question "what should I test next?" --session-file /tmp/case-chat-session.json
+
+Ask another question and append it to the same session:
+
+    blackhole case-chat /tmp/case-summary.json --question "what evidence is missing?" --session-file /tmp/case-chat-session.json
+
+The session file stores:
+
+- previous questions
+- answers
+- detected intents
+- cited endpoints
+- accumulated next actions
+- local-only and planning-only safety metadata
+
+The session memory remains local-only and deterministic. It does not call LLM providers, send requests, execute tools, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.
