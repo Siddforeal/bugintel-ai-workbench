@@ -129,3 +129,82 @@ def test_case_chat_cli_wrong_kind_exits_nonzero(tmp_path):
 
     assert result.exit_code == 2
     assert "Invalid case chat input" in result.output
+
+
+def test_case_chat_cli_appends_session_file(tmp_path):
+    case_file = tmp_path / "case-summary.json"
+    session_file = tmp_path / "case-chat-session.json"
+    output_file = tmp_path / "case-chat-answer.json"
+
+    case_file.write_text(json.dumps(_case_summary()))
+
+    first = runner.invoke(
+        app,
+        [
+            "case-chat",
+            str(case_file),
+            "--question",
+            "what should I test next?",
+            "--session-file",
+            str(session_file),
+            "--json-output",
+            str(output_file),
+        ],
+    )
+
+    assert first.exit_code == 0
+    assert "Saved case chat session" in first.output
+    assert session_file.exists()
+    assert output_file.exists()
+
+    second = runner.invoke(
+        app,
+        [
+            "case-chat",
+            str(case_file),
+            "--question",
+            "what evidence is missing?",
+            "--session-file",
+            str(session_file),
+            "--json-output",
+            str(output_file),
+        ],
+    )
+
+    assert second.exit_code == 0
+    data = json.loads(session_file.read_text())
+    assert data["kind"] == "result_evidence_case_chat_session"
+    assert data["turn_count"] == 2
+    assert data["intents"]["next-tests"] == 1
+    assert data["intents"]["missing-evidence"] == 1
+    assert "/api/accounts/123/users/999" in data["cited_endpoints"]
+    assert "/api/accounts/123/users/random" in data["cited_endpoints"]
+    assert data["safety"]["llm_provider_calls"] is False
+    assert data["safety"]["vulnerability_confirmation"] is False
+
+    answer_data = json.loads(output_file.read_text())
+    assert "session" in answer_data
+    assert answer_data["session"]["turn_count"] == 2
+
+
+def test_case_chat_cli_rejects_invalid_session_file(tmp_path):
+    case_file = tmp_path / "case-summary.json"
+    session_file = tmp_path / "bad-session.json"
+
+    case_file.write_text(json.dumps(_case_summary()))
+    session_file.write_text("{not json")
+
+    result = runner.invoke(
+        app,
+        [
+            "case-chat",
+            str(case_file),
+            "--question",
+            "what should I test next?",
+            "--session-file",
+            str(session_file),
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "Invalid case chat session file" in result.output

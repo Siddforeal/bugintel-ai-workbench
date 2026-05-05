@@ -53,6 +53,7 @@ from bugintel.core.result_evidence_hypothesis import generate_result_evidence_hy
 from bugintel.core.result_evidence_validation_plan import build_result_evidence_validation_plan
 from bugintel.core.result_evidence_case_summary import build_result_evidence_case_summary
 from bugintel.core.result_evidence_chat import answer_case_question
+from bugintel.core.result_evidence_chat_session import append_case_chat_turn_to_file
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -1980,6 +1981,11 @@ def result_evidence_case_summary_command(
 def case_chat_command(
     case_summary_file: Path = typer.Argument(..., help="Path to result evidence case summary JSON."),
     question: str = typer.Option(..., "--question", "-q", help="Local research question to answer from the case summary."),
+    session_file: Path | None = typer.Option(
+        None,
+        "--session-file",
+        help="Optional local JSON session file to append this case-chat turn.",
+    ),
     json_output: Path | None = typer.Option(
         None,
         "--json-output",
@@ -2028,6 +2034,17 @@ def case_chat_command(
         console.print("[bold]Next actions[/bold]")
         for item in answer.next_actions:
             console.print(f"- {item}")
+
+    if session_file:
+        try:
+            session = append_case_chat_turn_to_file(session_file, answer)
+        except ValueError as exc:
+            console.print(f"[bold red]Invalid case chat session file:[/bold red] {exc}")
+            raise typer.Exit(code=2)
+
+        answer_data["session"] = session.to_dict()
+        console.print(f"[bold green]Saved case chat session:[/bold green] {session_file}")
+        console.print(f"[bold green]Session summary:[/bold green] {session.summary_text()}")
 
     if json_output:
         json_output.parent.mkdir(parents=True, exist_ok=True)
