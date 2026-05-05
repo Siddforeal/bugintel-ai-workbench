@@ -1256,3 +1256,33 @@ This helps the result evidence workflow:
     → manual evidence capture
 
 The session memory is intentionally local-only and deterministic. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Hypothesis Priority Ranking
+
+Blackhole can rank local case-summary candidates so the researcher can decide what deserves attention first.
+
+Example:
+
+    blackhole result-evidence-priority-ranking /tmp/case-summary.json --output-file /tmp/priority-ranking.md --json-output /tmp/priority-ranking.json
+
+The ranking considers:
+
+- priority
+- readiness
+- evidence strength
+- severity hint
+- likely false-positive signals
+- missing evidence count
+
+This helps the result evidence workflow:
+
+    result-evidence-case-summary
+    → result-evidence-priority-ranking
+    → case-chat
+    → manual evidence capture
+    → result-evidence-review-report
+    → result-evidence-finding-draft
+    → result-evidence-finding-package
+    → final human-written report
+
+The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.

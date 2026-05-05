@@ -322,3 +322,30 @@ The session file stores:
 - local-only and planning-only safety metadata
 
 The session memory remains local-only and deterministic. It does not call LLM providers, send requests, execute tools, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Result Evidence Priority Ranking
+
+Rank local case-summary candidates by priority, readiness, evidence strength, severity hints, and missing evidence:
+
+    blackhole result-evidence-priority-ranking /tmp/case-summary.json --output-file /tmp/priority-ranking.md --json-output /tmp/priority-ranking.json
+
+Exclude weak or likely false-positive candidates:
+
+    blackhole result-evidence-priority-ranking /tmp/case-summary.json --exclude-weak --json-output /tmp/priority-ranking.json
+
+The ranking output includes:
+
+- top candidate
+- ranked candidate list
+- score
+- priority
+- readiness
+- evidence strength
+- severity hint
+- hypothesis class
+- ranking reason
+- missing evidence
+- next actions
+- local-only and planning-only safety metadata
+
+The priority ranking command does not confirm vulnerabilities automatically. It only ranks local case-summary candidates for human review.
