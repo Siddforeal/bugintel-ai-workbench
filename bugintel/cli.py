@@ -52,6 +52,7 @@ from bugintel.core.result_evidence_finding_package import build_result_evidence_
 from bugintel.core.result_evidence_hypothesis import generate_result_evidence_hypotheses
 from bugintel.core.result_evidence_validation_plan import build_result_evidence_validation_plan
 from bugintel.core.result_evidence_case_summary import build_result_evidence_case_summary
+from bugintel.core.result_evidence_chat import answer_case_question
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -1971,6 +1972,70 @@ def result_evidence_case_summary_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only summarizes local validation plan JSON. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat")
+def case_chat_command(
+    case_summary_file: Path = typer.Argument(..., help="Path to result evidence case summary JSON."),
+    question: str = typer.Option(..., "--question", "-q", help="Local research question to answer from the case summary."),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        help="Optional JSON output path.",
+    ),
+):
+    """Answer a local research question from a case summary JSON artifact."""
+    if not case_summary_file.exists():
+        console.print(f"[bold red]Case summary JSON not found:[/bold red] {case_summary_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(case_summary_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid case summary JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Case summary JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        answer = answer_case_question(data, question)
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid case chat input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    answer_data = answer.to_dict()
+
+    table = Table(title="Local Research Chat")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Case summary", str(case_summary_file))
+    table.add_row("Intent", answer.intent)
+    table.add_row("Cited endpoints", str(len(answer.cited_endpoints)))
+    table.add_row("Next actions", str(len(answer.next_actions)))
+    table.add_row("Execution", "planning-only; local artifact chat only")
+    console.print(table)
+
+    console.print()
+    console.print("[bold]Answer[/bold]")
+    console.print(answer.answer)
+
+    if answer.next_actions:
+        console.print()
+        console.print("[bold]Next actions[/bold]")
+        for item in answer.next_actions:
+            console.print(f"- {item}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(answer_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case chat JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only answers from local case-summary JSON. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
