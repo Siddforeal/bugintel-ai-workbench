@@ -60,6 +60,7 @@ from bugintel.core.result_evidence_report_assistant import build_case_report_ass
 from bugintel.core.result_evidence_chat_context import answer_case_context_question
 from bugintel.core.result_evidence_grounding import build_grounded_answer
 from bugintel.core.result_evidence_case_memory import build_result_evidence_case_memory
+from bugintel.core.result_evidence_chat_prompt import build_case_chat_prompt_package, render_case_chat_prompt_package_markdown
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -2707,6 +2708,88 @@ def case_memory_build_command(
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only builds local case memory from local artifacts. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-prompt-package")
+def case_chat_prompt_package_command(
+    case_memory_file: Path = typer.Option(..., "--case-memory", help="Path to result evidence case memory JSON."),
+    question: str = typer.Option(..., "--question", "-q", help="Question to package for optional LLM review."),
+    grounded_answer_file: Path | None = typer.Option(None, "--grounded-answer", help="Optional grounded answer JSON."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Build a safe reviewable LLM prompt package from local case-chat artifacts without calling a provider."""
+    if not case_memory_file.exists():
+        console.print(f"[bold red]Case memory JSON not found:[/bold red] {case_memory_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        case_memory = json.loads(case_memory_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid case memory JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(case_memory, dict):
+        console.print("[bold red]Case memory JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    grounded_answer = None
+    if grounded_answer_file:
+        if not grounded_answer_file.exists():
+            console.print(f"[bold red]Grounded answer JSON not found:[/bold red] {grounded_answer_file}")
+            raise typer.Exit(code=1)
+
+        try:
+            grounded_answer = json.loads(grounded_answer_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            console.print(f"[bold red]Invalid grounded answer JSON:[/bold red] {exc}")
+            raise typer.Exit(code=2)
+
+        if not isinstance(grounded_answer, dict):
+            console.print("[bold red]Grounded answer JSON must be an object.[/bold red]")
+            raise typer.Exit(code=2)
+
+    try:
+        package = build_case_chat_prompt_package(
+            case_memory=case_memory,
+            question=question,
+            grounded_answer=grounded_answer,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid case chat prompt package input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    package_data = package.to_dict()
+    markdown = render_case_chat_prompt_package_markdown(package)
+
+    table = Table(title="Case Chat Prompt Package")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Case memory", str(case_memory_file))
+    table.add_row("Question", package.question)
+    table.add_row("Artifact kinds", ", ".join(package.artifact_kinds))
+    table.add_row("Redaction applied", str(package.prompt_package.redaction_applied))
+    table.add_row("Provider execution", "false")
+    table.add_row("Execution", "planning-only; local prompt packaging only")
+    console.print(table)
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case chat prompt Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(package_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case chat prompt JSON:[/bold green] {json_output}")
+
+    if not output_file and not json_output:
+        console.print(markdown)
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only builds a local reviewable prompt package. "
+        "It does not call LLM providers, send requests, execute tools, or confirm vulnerabilities automatically."
     )
 
 
