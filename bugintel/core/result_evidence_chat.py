@@ -12,6 +12,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from bugintel.core.result_evidence_question_intent import normalize_question_intent
+
 
 @dataclass(frozen=True)
 class CaseChatAnswer:
@@ -60,8 +62,8 @@ def answer_case_question(
     if not isinstance(findings, list):
         raise ValueError("case summary requires a findings list")
 
-    normalized = question_text.lower()
-    intent = _detect_intent(normalized)
+    intent_result = normalize_question_intent(question_text)
+    intent = intent_result.intent
 
     if intent == "next-tests":
         answer, endpoints, actions = _answer_next_tests(artifact, findings)

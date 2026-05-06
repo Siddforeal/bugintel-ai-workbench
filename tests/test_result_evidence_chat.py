@@ -113,3 +113,24 @@ def test_case_chat_requires_case_summary_kind():
 def test_case_chat_requires_question():
     with pytest.raises(ValueError):
         answer_case_question(_case_summary(), "  ")
+
+
+def test_case_chat_understands_messy_next_question():
+    answer = answer_case_question(_case_summary(), "bro what should I do now?")
+
+    assert answer.intent == "next-tests"
+    assert "/api/accounts/123/users/999" in answer.answer
+
+
+def test_case_chat_understands_messy_report_ready_question():
+    answer = answer_case_question(_case_summary(), "can I submit this? is it reportable?")
+
+    assert answer.intent == "report-ready"
+    assert "/api/accounts/123/users/999" in answer.answer
+
+
+def test_case_chat_understands_messy_missing_evidence_question():
+    answer = answer_case_question(_case_summary(), "what proof is missing here?")
+
+    assert answer.intent == "missing-evidence"
+    assert "/api/accounts/123/users/random" in answer.cited_endpoints

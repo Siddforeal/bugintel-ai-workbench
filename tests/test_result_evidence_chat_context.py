@@ -170,3 +170,27 @@ def test_context_chat_requires_non_empty_question():
 def test_context_chat_rejects_wrong_optional_artifact_kind():
     with pytest.raises(ValueError):
         answer_case_context_question(_case_summary(), "what next?", ranking={"kind": "wrong"})
+
+
+def test_context_chat_understands_messy_reviewers_question():
+    answer = answer_case_context_question(
+        _case_summary(),
+        "bro what do agents think?",
+        ranking=_ranking(),
+        multi_agent_review=_multi_agent(),
+    )
+
+    assert answer.intent == "reviewers"
+    assert "authz-reviewer" in answer.answer
+
+
+def test_context_chat_understands_messy_final_report_question():
+    answer = answer_case_context_question(
+        _case_summary(),
+        "what should final report focus on?",
+        ranking=_ranking(),
+        report_assistant=_report_assistant(),
+    )
+
+    assert answer.intent == "final-report-focus"
+    assert "Best title candidate" in answer.answer

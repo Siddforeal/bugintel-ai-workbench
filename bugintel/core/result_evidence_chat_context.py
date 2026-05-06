@@ -15,6 +15,7 @@ from dataclasses import asdict, dataclass
 from typing import Any
 
 from bugintel.core.result_evidence_chat import answer_case_question
+from bugintel.core.result_evidence_question_intent import normalize_question_intent
 
 
 @dataclass(frozen=True)
@@ -74,8 +75,8 @@ def answer_case_context_question(
     if not question_text:
         raise ValueError("case chat context requires a non-empty question")
 
-    normalized = question_text.lower()
-    intent = _detect_context_intent(normalized)
+    intent_result = normalize_question_intent(question_text)
+    intent = _detect_context_intent(intent_result.normalized_question, fallback_intent=intent_result.intent)
     included = _included_artifacts(ranking, multi_agent_review, report_assistant, session)
 
     if intent == "reviewers":
@@ -104,7 +105,7 @@ def answer_case_context_question(
     )
 
 
-def _detect_context_intent(question: str) -> str:
+def _detect_context_intent(question: str, fallback_intent: str = "general") -> str:
     if any(phrase in question for phrase in ["reviewer", "reviewers", "agent", "agents", "multi-agent", "what do reviewers think"]):
         return "reviewers"
 
@@ -117,7 +118,7 @@ def _detect_context_intent(question: str) -> str:
     if any(phrase in question for phrase in ["report ready", "ready to report", "submit", "submission ready"]):
         return "report-ready"
 
-    return "delegate"
+    return "delegate" if fallback_intent == "general" else fallback_intent
 
 
 def _included_artifacts(
