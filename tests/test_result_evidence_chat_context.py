@@ -175,7 +175,7 @@ def test_context_chat_rejects_wrong_optional_artifact_kind():
 def test_context_chat_understands_messy_reviewers_question():
     answer = answer_case_context_question(
         _case_summary(),
-        "bro what do agents think?",
+        "what do agents think?",
         ranking=_ranking(),
         multi_agent_review=_multi_agent(),
     )

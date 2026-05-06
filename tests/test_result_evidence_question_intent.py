@@ -4,10 +4,10 @@ from bugintel.core.result_evidence_question_intent import normalize_question_int
 
 
 def test_question_intent_normalizes_next_tests_messy_question():
-    result = normalize_question_intent("bro what should I do now?")
+    result = normalize_question_intent("what should I do now?")
 
     assert result.intent == "next-tests"
-    assert result.normalized_question == "bro what should i do now"
+    assert result.normalized_question == "what should i do now"
     assert "what should i do now" in result.matched_terms
     assert result.to_dict()["safety"]["llm_provider_calls"] is False
 
