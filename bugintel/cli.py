@@ -57,6 +57,7 @@ from bugintel.core.result_evidence_chat_session import append_case_chat_turn_to_
 from bugintel.core.result_evidence_priority_ranking import build_result_evidence_priority_ranking
 from bugintel.core.result_evidence_multi_agent_review import build_result_evidence_multi_agent_review_plan
 from bugintel.core.result_evidence_report_assistant import build_case_report_assistant_draft
+from bugintel.core.result_evidence_chat_context import answer_case_context_question
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -2326,6 +2327,125 @@ def case_report_assistant_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only renders a local report skeleton. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-context")
+def case_chat_context_command(
+    case_summary_file: Path = typer.Argument(..., help="Path to result evidence case summary JSON."),
+    question: str = typer.Option(..., "--question", "-q", help="Local research question to answer from multiple artifacts."),
+    ranking_file: Path | None = typer.Option(
+        None,
+        "--ranking",
+        help="Optional result evidence priority ranking JSON.",
+    ),
+    multi_agent_review_file: Path | None = typer.Option(
+        None,
+        "--multi-agent-review",
+        help="Optional result evidence multi-agent review JSON.",
+    ),
+    report_assistant_file: Path | None = typer.Option(
+        None,
+        "--report-assistant",
+        help="Optional case-report-assistant JSON.",
+    ),
+    session_file: Path | None = typer.Option(
+        None,
+        "--session-file",
+        help="Optional local case-chat session JSON.",
+    ),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        help="Optional JSON output path.",
+    ),
+    source: str = typer.Option("result-evidence-case-chat-context", "--source", help="Context chat source label."),
+):
+    """Answer a stronger local research question from multiple case artifacts."""
+    if not case_summary_file.exists():
+        console.print(f"[bold red]Case summary JSON not found:[/bold red] {case_summary_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        case_summary = json.loads(case_summary_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid case summary JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(case_summary, dict):
+        console.print("[bold red]Case summary JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    def load_optional_json(path: Path | None, label: str) -> dict | None:
+        if path is None:
+            return None
+
+        if not path.exists():
+            console.print(f"[bold red]{label} JSON not found:[/bold red] {path}")
+            raise typer.Exit(code=1)
+
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            console.print(f"[bold red]Invalid {label} JSON:[/bold red] {exc}")
+            raise typer.Exit(code=2)
+
+        if not isinstance(data, dict):
+            console.print(f"[bold red]{label} JSON must be an object.[/bold red]")
+            raise typer.Exit(code=2)
+
+        return data
+
+    ranking = load_optional_json(ranking_file, "Priority ranking")
+    multi_agent_review = load_optional_json(multi_agent_review_file, "Multi-agent review")
+    report_assistant = load_optional_json(report_assistant_file, "Report assistant")
+    session = load_optional_json(session_file, "Case chat session")
+
+    try:
+        answer = answer_case_context_question(
+            case_summary,
+            question,
+            ranking=ranking,
+            multi_agent_review=multi_agent_review,
+            report_assistant=report_assistant,
+            session=session,
+            source=source,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid case chat context input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    answer_data = answer.to_dict()
+
+    table = Table(title="Strong Local Research Chat")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Case summary", str(case_summary_file))
+    table.add_row("Intent", answer.intent)
+    table.add_row("Included artifacts", ", ".join(answer.included_artifacts))
+    table.add_row("Cited endpoints", str(len(answer.cited_endpoints)))
+    table.add_row("Next actions", str(len(answer.next_actions)))
+    table.add_row("Execution", "planning-only; local multi-artifact chat only")
+    console.print(table)
+
+    console.print()
+    console.print("[bold]Answer[/bold]")
+    console.print(answer.answer)
+
+    if answer.next_actions:
+        console.print()
+        console.print("[bold]Next actions[/bold]")
+        for item in answer.next_actions:
+            console.print(f"- {item}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(answer_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case chat context JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only answers from local case artifacts. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
