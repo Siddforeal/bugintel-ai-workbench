@@ -1378,3 +1378,28 @@ This helps the result evidence workflow:
     → final human-written report
 
 The command remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Chat Context Router
+
+Blackhole can inspect a local result evidence artifact and route the researcher to the best local chat or review command.
+
+Example:
+
+    blackhole chat-context-router /tmp/artifact.json --output-file /tmp/route.md --json-output /tmp/route.json
+
+This helps when the researcher has a saved artifact but is not sure what to ask next. The router explains:
+
+- what the artifact is
+- what questions it supports
+- what command to use next
+- what safe next actions are available
+
+This helps the local research workflow:
+
+    local artifact
+    → chat-context-router
+    → recommended local command
+    → case-chat-context or specialist review
+    → manual evidence capture
+
+The command remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.

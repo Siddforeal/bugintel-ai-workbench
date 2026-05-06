@@ -433,3 +433,28 @@ Supported v1 context questions include:
 - summarize chat memory
 
 The command remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Chat Context Router
+
+Inspect a local result evidence artifact and show what chat/review command should be used next:
+
+    blackhole chat-context-router /tmp/artifact.json --output-file /tmp/route.md --json-output /tmp/route.json
+
+The router identifies:
+
+- artifact kind
+- artifact label
+- recommended command
+- supported question styles
+- safe next actions
+- local-only and planning-only safety metadata
+
+Supported artifact kinds include:
+
+- result_evidence_case_summary
+- result_evidence_priority_ranking
+- result_evidence_multi_agent_review_plan
+- result_evidence_report_assistant
+- result_evidence_case_chat_session
+
+The router is deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.
