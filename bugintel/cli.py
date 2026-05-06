@@ -61,6 +61,7 @@ from bugintel.core.result_evidence_chat_context import answer_case_context_quest
 from bugintel.core.result_evidence_grounding import build_grounded_answer
 from bugintel.core.result_evidence_case_memory import build_result_evidence_case_memory
 from bugintel.core.result_evidence_chat_prompt import build_case_chat_prompt_package, render_case_chat_prompt_package_markdown
+from bugintel.core.result_evidence_chat_provider_gate import build_case_chat_provider_gate
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -2789,6 +2790,85 @@ def case_chat_prompt_package_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only builds a local reviewable prompt package. "
+        "It does not call LLM providers, send requests, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-provider-gate")
+def case_chat_provider_gate_command(
+    prompt_package_file: Path = typer.Argument(..., help="Path to case-chat prompt package JSON."),
+    provider_name: str = typer.Option("disabled", "--provider", help="Future LLM provider name. Current default is disabled."),
+    allow_provider_execution: bool = typer.Option(
+        False,
+        "--allow-provider-execution",
+        help="Explicit future-provider execution opt-in. This command still does not run a provider.",
+    ),
+    require_prompt_audit_pass: bool = typer.Option(
+        True,
+        "--require-prompt-audit-pass/--no-require-prompt-audit-pass",
+        help="Require a passing prompt audit before any future provider execution.",
+    ),
+    model: str = typer.Option("", "--model", help="Future model label. Does not trigger provider execution."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Check the local provider gate for a case-chat prompt package without calling any provider."""
+    if not prompt_package_file.exists():
+        console.print(f"[bold red]Case chat prompt package JSON not found:[/bold red] {prompt_package_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(prompt_package_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid case chat prompt package JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Case chat prompt package JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        gate = build_case_chat_provider_gate(
+            data,
+            provider_name=provider_name,
+            allow_provider_execution=allow_provider_execution,
+            require_prompt_audit_pass=require_prompt_audit_pass,
+            model=model,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid case chat provider gate input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    gate_data = gate.to_dict()
+    markdown = gate.to_markdown()
+
+    table = Table(title="Case Chat Provider Gate")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Provider", gate.provider_name)
+    table.add_row("Allowed", str(gate.allowed))
+    table.add_row("Audit status", gate.audit_status)
+    table.add_row("Reason", gate.reason)
+    table.add_row("Provider execution performed", "false")
+    console.print(table)
+
+    if gate.required_actions:
+        console.print("[bold yellow]Required actions:[/bold yellow]")
+        for action in gate.required_actions:
+            console.print(f"- {action}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case chat provider gate Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(gate_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case chat provider gate JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only checks a local provider gate. "
         "It does not call LLM providers, send requests, execute tools, or confirm vulnerabilities automatically."
     )
 
