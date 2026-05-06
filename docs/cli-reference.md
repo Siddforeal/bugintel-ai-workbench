@@ -511,3 +511,26 @@ The grounded answer includes:
 - local-only and planning-only safety metadata
 
 The command remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Multi-Artifact Case Memory
+
+Build a local case memory JSON from multiple result evidence artifacts:
+
+    blackhole case-memory-build --case-summary /tmp/case-summary.json --ranking /tmp/priority-ranking.json --multi-agent-review /tmp/multi-agent-review.json --report-assistant /tmp/report-assistant.json --grounded-answer /tmp/grounded-answer.json --output-file /tmp/case-memory.json
+
+Optionally write Markdown too:
+
+    blackhole case-memory-build --case-summary /tmp/case-summary.json --ranking /tmp/priority-ranking.json --output-file /tmp/case-memory.json --markdown-output /tmp/case-memory.md
+
+The case memory includes:
+
+- artifact inventory
+- top endpoint
+- cited endpoints
+- open next actions
+- missing evidence
+- strongest candidates
+- weak candidates
+- local-only and planning-only safety metadata
+
+The case memory builder remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.

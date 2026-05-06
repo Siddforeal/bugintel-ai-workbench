@@ -1448,3 +1448,33 @@ This helps the local research workflow:
     → final human-written report
 
 The command remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Multi-Artifact Case Memory
+
+Blackhole can combine multiple local result evidence artifacts into a single case memory object.
+
+Example:
+
+    blackhole case-memory-build --case-summary /tmp/case-summary.json --ranking /tmp/priority-ranking.json --multi-agent-review /tmp/multi-agent-review.json --report-assistant /tmp/report-assistant.json --grounded-answer /tmp/grounded-answer.json --output-file /tmp/case-memory.json
+
+The memory object captures:
+
+- which artifacts were present
+- the top endpoint
+- cited endpoints
+- open next actions
+- missing evidence
+- strongest candidates
+- weak candidates
+- safety metadata
+
+This helps the local research workflow:
+
+    local artifacts
+    → case-memory-build
+    → local case memory
+    → case-chat-context / grounded answers
+    → manual evidence capture
+    → final human-written report
+
+The command remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
