@@ -402,3 +402,34 @@ The report assistant produces:
 - final report readiness state
 
 The report assistant remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Strong Local Research Chat
+
+Ask a stronger local research question across multiple result evidence artifacts:
+
+    blackhole case-chat-context /tmp/case-summary.json --question "is this ready to report?" --json-output /tmp/strong-chat-answer.json
+
+Use additional local artifacts for richer answers:
+
+    blackhole case-chat-context /tmp/case-summary.json --question "what should the final report focus on?" --ranking /tmp/priority-ranking.json --multi-agent-review /tmp/multi-agent-review.json --report-assistant /tmp/report-assistant.json --json-output /tmp/strong-chat-answer.json
+
+The strong local chat can use:
+
+- case summary JSON
+- priority ranking JSON
+- multi-agent review JSON
+- case report assistant JSON
+- case chat session JSON
+
+Supported v1 context questions include:
+
+- what should I test next?
+- what is strongest?
+- what do reviewers think?
+- what evidence is missing?
+- is this ready to report?
+- what should I not claim?
+- what should the final report focus on?
+- summarize chat memory
+
+The command remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.

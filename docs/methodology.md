@@ -1350,3 +1350,31 @@ This helps the result evidence workflow:
     → final human-written report
 
 The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Strong Local Research Chat
+
+Blackhole can answer local research questions across multiple result evidence artifacts.
+
+Example:
+
+    blackhole case-chat-context /tmp/case-summary.json --question "is this ready to report?" --ranking /tmp/priority-ranking.json --multi-agent-review /tmp/multi-agent-review.json --report-assistant /tmp/report-assistant.json --json-output /tmp/strong-chat-answer.json
+
+This is the stronger version of local research chat. Instead of reading only a case summary, it can combine:
+
+- case summary
+- priority ranking
+- multi-agent review
+- case report assistant output
+- case chat session memory
+
+This helps the result evidence workflow:
+
+    result-evidence-case-summary
+    → result-evidence-priority-ranking
+    → result-evidence-multi-agent-review
+    → case-report-assistant
+    → case-chat-context
+    → manual evidence capture
+    → final human-written report
+
+The command remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
