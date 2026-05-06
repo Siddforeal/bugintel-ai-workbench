@@ -59,6 +59,7 @@ from bugintel.core.result_evidence_multi_agent_review import build_result_eviden
 from bugintel.core.result_evidence_report_assistant import build_case_report_assistant_draft
 from bugintel.core.result_evidence_chat_context import answer_case_context_question
 from bugintel.core.result_evidence_grounding import build_grounded_answer
+from bugintel.core.result_evidence_case_memory import build_result_evidence_case_memory
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -2626,6 +2627,85 @@ def case_chat_grounded_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only answers from local artifacts and local snippets. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-memory-build")
+def case_memory_build_command(
+    case_summary_file: Path | None = typer.Option(None, "--case-summary", help="Optional result evidence case summary JSON."),
+    ranking_file: Path | None = typer.Option(None, "--ranking", help="Optional result evidence priority ranking JSON."),
+    multi_agent_review_file: Path | None = typer.Option(None, "--multi-agent-review", help="Optional multi-agent review JSON."),
+    report_assistant_file: Path | None = typer.Option(None, "--report-assistant", help="Optional report assistant JSON."),
+    grounded_answer_file: Path | None = typer.Option(None, "--grounded-answer", help="Optional grounded answer JSON."),
+    session_file: Path | None = typer.Option(None, "--session-file", help="Optional case-chat session JSON."),
+    output_file: Path = typer.Option(..., "--output-file", "--output", help="Path to write case memory JSON."),
+    markdown_output: Path | None = typer.Option(None, "--markdown-output", help="Optional Markdown output path."),
+):
+    """Build a local multi-artifact case memory JSON file."""
+    def load_optional_json(path: Path | None, label: str) -> dict | None:
+        if path is None:
+            return None
+
+        if not path.exists():
+            console.print(f"[bold red]{label} JSON not found:[/bold red] {path}")
+            raise typer.Exit(code=1)
+
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            console.print(f"[bold red]Invalid {label} JSON:[/bold red] {exc}")
+            raise typer.Exit(code=2)
+
+        if not isinstance(data, dict):
+            console.print(f"[bold red]{label} JSON must be an object.[/bold red]")
+            raise typer.Exit(code=2)
+
+        return data
+
+    case_summary = load_optional_json(case_summary_file, "Case summary")
+    ranking = load_optional_json(ranking_file, "Priority ranking")
+    multi_agent_review = load_optional_json(multi_agent_review_file, "Multi-agent review")
+    report_assistant = load_optional_json(report_assistant_file, "Report assistant")
+    grounded_answer = load_optional_json(grounded_answer_file, "Grounded answer")
+    session = load_optional_json(session_file, "Case chat session")
+
+    try:
+        memory = build_result_evidence_case_memory(
+            case_summary=case_summary,
+            ranking=ranking,
+            multi_agent_review=multi_agent_review,
+            report_assistant=report_assistant,
+            grounded_answer=grounded_answer,
+            session=session,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid case memory input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    memory_data = memory.to_dict()
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    output_file.write_text(json.dumps(memory_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    table = Table(title="Multi-Artifact Case Memory")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Output file", str(output_file))
+    table.add_row("Top endpoint", memory.top_endpoint)
+    table.add_row("Cited endpoints", str(len(memory.cited_endpoints)))
+    table.add_row("Open next actions", str(len(memory.open_next_actions)))
+    table.add_row("Missing evidence", str(len(memory.missing_evidence)))
+    table.add_row("Execution", "planning-only; local case memory build only")
+    console.print(table)
+    console.print(f"[bold green]Saved case memory JSON:[/bold green] {output_file}")
+
+    if markdown_output:
+        markdown_output.parent.mkdir(parents=True, exist_ok=True)
+        markdown_output.write_text(memory.to_markdown() + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case memory Markdown:[/bold green] {markdown_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only builds local case memory from local artifacts. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
