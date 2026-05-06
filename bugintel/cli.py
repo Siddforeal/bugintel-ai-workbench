@@ -55,6 +55,7 @@ from bugintel.core.result_evidence_case_summary import build_result_evidence_cas
 from bugintel.core.result_evidence_chat import answer_case_question
 from bugintel.core.result_evidence_chat_session import append_case_chat_turn_to_file
 from bugintel.core.result_evidence_priority_ranking import build_result_evidence_priority_ranking
+from bugintel.core.result_evidence_multi_agent_review import build_result_evidence_multi_agent_review_plan
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -2131,6 +2132,84 @@ def result_evidence_priority_ranking_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only ranks local case-summary candidates. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("result-evidence-multi-agent-review")
+def result_evidence_multi_agent_review_command(
+    ranking_file: Path = typer.Argument(..., help="Path to result evidence priority ranking JSON."),
+    include_low_priority: bool = typer.Option(
+        True,
+        "--include-low-priority/--exclude-low-priority",
+        help="Include low priority or likely false-positive candidates.",
+    ),
+    output_file: Path | None = typer.Option(
+        None,
+        "--output-file",
+        "--output",
+        help="Optional Markdown output path.",
+    ),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        help="Optional JSON output path.",
+    ),
+    source: str = typer.Option("result-evidence-multi-agent-review", "--source", help="Multi-agent review source label."),
+):
+    """Build specialist review plans from a local result evidence priority ranking."""
+    if not ranking_file.exists():
+        console.print(f"[bold red]Priority ranking JSON not found:[/bold red] {ranking_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(ranking_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid priority ranking JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Priority ranking JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        plan = build_result_evidence_multi_agent_review_plan(
+            data,
+            include_low_priority=include_low_priority,
+            source=source,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid result evidence multi-agent review input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    plan_data = plan.to_dict()
+    markdown = plan.to_markdown()
+
+    table = Table(title="Result Evidence Multi-Agent Review")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Ranking file", str(ranking_file))
+    table.add_row("Candidate plans", str(plan_data["count"]))
+    table.add_row("Agent tasks", str(plan_data["total_agent_tasks"]))
+    table.add_row("Include low priority", str(include_low_priority))
+    table.add_row("Execution", "planning-only; local specialist review planning only")
+    console.print(table)
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result evidence multi-agent review Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(plan_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved result evidence multi-agent review JSON:[/bold green] {json_output}")
+
+    if not output_file and not json_output:
+        console.print(markdown)
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only builds local specialist review plans. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
