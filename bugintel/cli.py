@@ -58,6 +58,7 @@ from bugintel.core.result_evidence_priority_ranking import build_result_evidence
 from bugintel.core.result_evidence_multi_agent_review import build_result_evidence_multi_agent_review_plan
 from bugintel.core.result_evidence_report_assistant import build_case_report_assistant_draft
 from bugintel.core.result_evidence_chat_context import answer_case_context_question
+from bugintel.core.result_evidence_grounding import build_grounded_answer
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -2516,6 +2517,115 @@ def chat_context_router_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only routes local artifacts. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-grounded")
+def case_chat_grounded_command(
+    case_summary_file: Path = typer.Argument(..., help="Path to result evidence case summary JSON."),
+    question: str = typer.Option(..., "--question", "-q", help="Local research question to answer with grounding snippets."),
+    ranking_file: Path | None = typer.Option(None, "--ranking", help="Optional result evidence priority ranking JSON."),
+    multi_agent_review_file: Path | None = typer.Option(None, "--multi-agent-review", help="Optional multi-agent review JSON."),
+    report_assistant_file: Path | None = typer.Option(None, "--report-assistant", help="Optional report assistant JSON."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Answer from local case artifacts and include deterministic grounding snippets."""
+    if not case_summary_file.exists():
+        console.print(f"[bold red]Case summary JSON not found:[/bold red] {case_summary_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        case_summary = json.loads(case_summary_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid case summary JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(case_summary, dict):
+        console.print("[bold red]Case summary JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    def load_optional_json(path: Path | None, label: str) -> dict | None:
+        if path is None:
+            return None
+
+        if not path.exists():
+            console.print(f"[bold red]{label} JSON not found:[/bold red] {path}")
+            raise typer.Exit(code=1)
+
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            console.print(f"[bold red]Invalid {label} JSON:[/bold red] {exc}")
+            raise typer.Exit(code=2)
+
+        if not isinstance(data, dict):
+            console.print(f"[bold red]{label} JSON must be an object.[/bold red]")
+            raise typer.Exit(code=2)
+
+        return data
+
+    ranking = load_optional_json(ranking_file, "Priority ranking")
+    multi_agent_review = load_optional_json(multi_agent_review_file, "Multi-agent review")
+    report_assistant = load_optional_json(report_assistant_file, "Report assistant")
+
+    try:
+        answer = answer_case_context_question(
+            case_summary,
+            question,
+            ranking=ranking,
+            multi_agent_review=multi_agent_review,
+            report_assistant=report_assistant,
+        )
+        grounded = build_grounded_answer(
+            answer=answer.answer,
+            intent=answer.intent,
+            cited_endpoints=answer.cited_endpoints,
+            next_actions=answer.next_actions,
+            case_summary=case_summary,
+            ranking=ranking,
+            multi_agent_review=multi_agent_review,
+            report_assistant=report_assistant,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid grounded case chat input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    grounded_data = grounded.to_dict()
+
+    table = Table(title="Grounded Local Research Chat")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Case summary", str(case_summary_file))
+    table.add_row("Intent", grounded.intent)
+    table.add_row("Cited endpoints", str(len(grounded.cited_endpoints)))
+    table.add_row("Grounding snippets", str(len(grounded.grounding)))
+    table.add_row("Execution", "planning-only; local grounded chat only")
+    console.print(table)
+
+    console.print()
+    console.print("[bold]Answer[/bold]")
+    console.print(grounded.answer)
+
+    if grounded.grounding:
+        console.print()
+        console.print("[bold]Grounding[/bold]")
+        for snippet in grounded.grounding[:12]:
+            console.print(f"- {snippet.artifact}:{snippet.path} = {snippet.value}")
+
+    if grounded.next_actions:
+        console.print()
+        console.print("[bold]Next actions[/bold]")
+        for item in grounded.next_actions:
+            console.print(f"- {item}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(grounded_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved grounded case chat JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only answers from local artifacts and local snippets. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
