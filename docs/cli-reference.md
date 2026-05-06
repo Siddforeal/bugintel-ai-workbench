@@ -558,3 +558,23 @@ The prompt package includes:
 - local-only and planning-only safety metadata
 
 This command does not call any LLM provider. It only prepares a local prompt package for human review.
+
+## Case Chat Provider Gate
+
+Check whether a local case-chat prompt package would be allowed to use a future LLM provider:
+
+    blackhole case-chat-provider-gate /tmp/case-chat-prompt.json --json-output /tmp/provider-gate.json
+
+Write a Markdown gate report too:
+
+    blackhole case-chat-provider-gate /tmp/case-chat-prompt.json --output-file /tmp/provider-gate.md --json-output /tmp/provider-gate.json
+
+The provider gate checks:
+
+- prompt package shape
+- local prompt safety audit status
+- provider name
+- explicit provider execution opt-in
+- required actions before any future provider execution
+
+The current default provider is disabled. This command does not call any LLM provider. It only returns a local gate decision.

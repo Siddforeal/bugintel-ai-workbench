@@ -1507,3 +1507,22 @@ This helps the local research workflow:
     → optional future LLM provider gate
 
 The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Case Chat Provider Gate
+
+Blackhole can check a local case-chat prompt package against the provider gate before any future LLM use.
+
+Example:
+
+    blackhole case-chat-provider-gate /tmp/case-chat-prompt.json --output-file /tmp/provider-gate.md --json-output /tmp/provider-gate.json
+
+The gate checks local prompt package safety and provider configuration. It keeps provider execution disabled by default.
+
+This helps the local research workflow:
+
+    case-chat-prompt-package
+    → case-chat-provider-gate
+    → human review
+    → optional future provider support
+
+The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
