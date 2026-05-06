@@ -8,7 +8,7 @@ It is not a scanner.
 
 The long-term goal is to become a world-class AI-assisted security research system that can reason over structured case memory, prioritize attack surfaces, plan validation safely, and help researchers produce high-quality evidence and reports.
 
-Current version: 0.54.0
+Current version: 0.55.0
 
 ## Status
 
