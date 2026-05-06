@@ -458,3 +458,32 @@ Supported artifact kinds include:
 - result_evidence_case_chat_session
 
 The router is deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Natural Question Expansion
+
+Blackhole expands messy human research questions into deterministic local chat intents.
+
+Examples now understood by case-chat and case-chat-context include:
+
+- what should I do now?
+- can I submit this?
+- is this reportable?
+- what proof is missing?
+- what should I avoid saying?
+- what do agents think?
+- what should final report focus on?
+- summarize chat memory
+
+The expansion maps these questions to local intents such as:
+
+- next-tests
+- strongest
+- weak
+- report-ready
+- missing-evidence
+- do-not-claim
+- reviewers
+- final-report-focus
+- session-summary
+
+This behavior is deterministic, local-only, and planning-only. It does not call LLM providers or confirm vulnerabilities.

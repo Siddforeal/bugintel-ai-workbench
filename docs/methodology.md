@@ -1403,3 +1403,21 @@ This helps the local research workflow:
     → manual evidence capture
 
 The command remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Natural Question Expansion
+
+Blackhole can normalize messy researcher questions into local deterministic chat intents.
+
+Examples:
+
+    what should I do now?
+    can I submit this?
+    what proof is missing here?
+    what do agents think?
+    what should final report focus on?
+
+These are mapped into known local intents such as next-tests, report-ready, missing-evidence, reviewers, and final-report-focus.
+
+This makes case-chat and case-chat-context more natural without calling an LLM provider. The mapping is rule-based, deterministic, local-only, and planning-only.
+
+The command behavior remains safe: no requests, no curl, no browser, no Kali tools, no mutation, no authorization bypass, and no vulnerability confirmation.
