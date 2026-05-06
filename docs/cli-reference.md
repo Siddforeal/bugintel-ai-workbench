@@ -578,3 +578,29 @@ The provider gate checks:
 - required actions before any future provider execution
 
 The current default provider is disabled. This command does not call any LLM provider. It only returns a local gate decision.
+
+## Case Chat Provider Dry-Run
+
+Run a local dry-run for a case-chat prompt package:
+
+    blackhole case-chat-provider-dry-run /tmp/case-chat-prompt.json --output-file /tmp/provider-dry-run.md --json-output /tmp/provider-dry-run.json
+
+The dry-run performs:
+
+- local prompt safety audit
+- local provider gate decision
+- disabled provider stub result
+- required actions summary
+
+The dry-run always reports provider_execution=false. It does not call any real LLM provider.
+
+The output includes:
+
+- provider name
+- prompt audit status
+- gate allowed/blocked
+- gate reason
+- disabled provider status
+- disabled provider reason
+- required actions
+- local-only and planning-only safety metadata

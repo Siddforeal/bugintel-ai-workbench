@@ -1526,3 +1526,21 @@ This helps the local research workflow:
     → optional future provider support
 
 The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Case Chat Provider Dry-Run
+
+Blackhole can run a local dry-run for a case-chat prompt package before any future provider integration.
+
+Example:
+
+    blackhole case-chat-provider-dry-run /tmp/case-chat-prompt.json --output-file /tmp/provider-dry-run.md --json-output /tmp/provider-dry-run.json
+
+The dry-run combines:
+
+- prompt safety audit
+- provider gate decision
+- disabled provider stub result
+
+This gives a full local preview of what would happen before any future LLM provider execution.
+
+The command remains local-only and planning-only. It does not call real LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
