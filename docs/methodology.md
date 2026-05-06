@@ -1421,3 +1421,30 @@ These are mapped into known local intents such as next-tests, report-ready, miss
 This makes case-chat and case-chat-context more natural without calling an LLM provider. The mapping is rule-based, deterministic, local-only, and planning-only.
 
 The command behavior remains safe: no requests, no curl, no browser, no Kali tools, no mutation, no authorization bypass, and no vulnerability confirmation.
+
+## Evidence Snippet Grounding
+
+Blackhole can ground local chat answers in specific fields from local artifacts.
+
+Example:
+
+    blackhole case-chat-grounded /tmp/case-summary.json --question "can I submit this?" --ranking /tmp/priority-ranking.json --multi-agent-review /tmp/multi-agent-review.json --report-assistant /tmp/report-assistant.json --json-output /tmp/grounded-answer.json
+
+This helps make local chat answers more trustworthy by showing what artifact field supported the answer.
+
+Grounding snippets include:
+
+- artifact name
+- field path
+- field value
+- reason the field matters
+
+This helps the local research workflow:
+
+    local artifacts
+    → case-chat-grounded
+    → grounded answer
+    → manual evidence capture
+    → final human-written report
+
+The command remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.

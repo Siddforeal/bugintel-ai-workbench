@@ -487,3 +487,27 @@ The expansion maps these questions to local intents such as:
 - session-summary
 
 This behavior is deterministic, local-only, and planning-only. It does not call LLM providers or confirm vulnerabilities.
+
+## Evidence Snippet Grounding
+
+Answer a local research question and include deterministic grounding snippets from local artifacts:
+
+    blackhole case-chat-grounded /tmp/case-summary.json --question "can I submit this?" --json-output /tmp/grounded-answer.json
+
+Use additional artifacts for richer grounding:
+
+    blackhole case-chat-grounded /tmp/case-summary.json --question "what should the final report focus on?" --ranking /tmp/priority-ranking.json --multi-agent-review /tmp/multi-agent-review.json --report-assistant /tmp/report-assistant.json --json-output /tmp/grounded-answer.json
+
+The grounded answer includes:
+
+- answer
+- intent
+- cited endpoints
+- next actions
+- grounding snippets
+- artifact path
+- artifact value
+- reason for each snippet
+- local-only and planning-only safety metadata
+
+The command remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.
