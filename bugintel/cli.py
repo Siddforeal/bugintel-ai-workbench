@@ -56,6 +56,7 @@ from bugintel.core.result_evidence_chat import answer_case_question
 from bugintel.core.result_evidence_chat_session import append_case_chat_turn_to_file
 from bugintel.core.result_evidence_priority_ranking import build_result_evidence_priority_ranking
 from bugintel.core.result_evidence_multi_agent_review import build_result_evidence_multi_agent_review_plan
+from bugintel.core.result_evidence_report_assistant import build_case_report_assistant_draft
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -2210,6 +2211,121 @@ def result_evidence_multi_agent_review_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only builds local specialist review plans. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-report-assistant")
+def case_report_assistant_command(
+    case_summary_file: Path = typer.Argument(..., help="Path to result evidence case summary JSON."),
+    ranking_file: Path | None = typer.Option(
+        None,
+        "--ranking",
+        help="Optional result evidence priority ranking JSON.",
+    ),
+    multi_agent_review_file: Path | None = typer.Option(
+        None,
+        "--multi-agent-review",
+        help="Optional result evidence multi-agent review JSON.",
+    ),
+    output_file: Path | None = typer.Option(
+        None,
+        "--output-file",
+        "--output",
+        help="Optional Markdown output path.",
+    ),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        help="Optional JSON output path.",
+    ),
+    source: str = typer.Option("result-evidence-report-assistant", "--source", help="Report assistant source label."),
+):
+    """Build a planning-only report skeleton from local case intelligence artifacts."""
+    if not case_summary_file.exists():
+        console.print(f"[bold red]Case summary JSON not found:[/bold red] {case_summary_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        case_summary = json.loads(case_summary_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid case summary JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(case_summary, dict):
+        console.print("[bold red]Case summary JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    ranking = None
+    if ranking_file:
+        if not ranking_file.exists():
+            console.print(f"[bold red]Priority ranking JSON not found:[/bold red] {ranking_file}")
+            raise typer.Exit(code=1)
+
+        try:
+            ranking = json.loads(ranking_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            console.print(f"[bold red]Invalid priority ranking JSON:[/bold red] {exc}")
+            raise typer.Exit(code=2)
+
+        if not isinstance(ranking, dict):
+            console.print("[bold red]Priority ranking JSON must be an object.[/bold red]")
+            raise typer.Exit(code=2)
+
+    multi_agent_review = None
+    if multi_agent_review_file:
+        if not multi_agent_review_file.exists():
+            console.print(f"[bold red]Multi-agent review JSON not found:[/bold red] {multi_agent_review_file}")
+            raise typer.Exit(code=1)
+
+        try:
+            multi_agent_review = json.loads(multi_agent_review_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            console.print(f"[bold red]Invalid multi-agent review JSON:[/bold red] {exc}")
+            raise typer.Exit(code=2)
+
+        if not isinstance(multi_agent_review, dict):
+            console.print("[bold red]Multi-agent review JSON must be an object.[/bold red]")
+            raise typer.Exit(code=2)
+
+    try:
+        draft = build_case_report_assistant_draft(
+            case_summary,
+            ranking=ranking,
+            multi_agent_review=multi_agent_review,
+            source=source,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid case report assistant input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    draft_data = draft.to_dict()
+
+    table = Table(title="Case-to-Report Assistant")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Case summary", str(case_summary_file))
+    table.add_row("Affected endpoints", str(len(draft.affected_endpoints)))
+    table.add_row("Title candidates", str(len(draft.title_candidates)))
+    table.add_row("Readiness", draft.readiness)
+    table.add_row("Execution", "planning-only; local report skeleton only")
+    console.print(table)
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(draft.markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case report assistant Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(draft_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case report assistant JSON:[/bold green] {json_output}")
+
+    if not output_file and not json_output:
+        console.print(draft.markdown)
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only renders a local report skeleton. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
