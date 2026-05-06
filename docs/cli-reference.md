@@ -349,3 +349,30 @@ The ranking output includes:
 - local-only and planning-only safety metadata
 
 The priority ranking command does not confirm vulnerabilities automatically. It only ranks local case-summary candidates for human review.
+
+## Result Evidence Multi-Agent Review
+
+Build deterministic specialist review plans from a local result evidence priority ranking JSON:
+
+    blackhole result-evidence-multi-agent-review /tmp/priority-ranking.json --output-file /tmp/multi-agent-review.md --json-output /tmp/multi-agent-review.json
+
+Exclude low-priority or likely false-positive candidates:
+
+    blackhole result-evidence-multi-agent-review /tmp/priority-ranking.json --exclude-low-priority --json-output /tmp/multi-agent-review.json
+
+The multi-agent review planner creates specialist review tasks for:
+
+- authz-reviewer
+- false-positive-reviewer
+- impact-reviewer
+- evidence-reviewer
+- report-reviewer
+
+Each agent task includes:
+
+- focus
+- review questions
+- checklist
+- risk flags
+
+The multi-agent review planner remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.

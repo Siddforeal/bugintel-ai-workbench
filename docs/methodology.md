@@ -1286,3 +1286,33 @@ This helps the result evidence workflow:
     → final human-written report
 
 The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Multi-Agent Review Planner
+
+Blackhole can build deterministic specialist review plans from a local priority ranking.
+
+Example:
+
+    blackhole result-evidence-multi-agent-review /tmp/priority-ranking.json --output-file /tmp/multi-agent-review.md --json-output /tmp/multi-agent-review.json
+
+The planner creates specialist review tasks for:
+
+- authorization and object-boundary review
+- false-positive review
+- impact review
+- evidence quality review
+- report wording and submission readiness review
+
+This helps the result evidence workflow:
+
+    result-evidence-case-summary
+    → result-evidence-priority-ranking
+    → result-evidence-multi-agent-review
+    → case-chat
+    → manual evidence capture
+    → result-evidence-review-report
+    → result-evidence-finding-draft
+    → result-evidence-finding-package
+    → final human-written report
+
+The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
