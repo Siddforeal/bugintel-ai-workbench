@@ -62,6 +62,7 @@ from bugintel.core.result_evidence_grounding import build_grounded_answer
 from bugintel.core.result_evidence_case_memory import build_result_evidence_case_memory
 from bugintel.core.result_evidence_chat_prompt import build_case_chat_prompt_package, render_case_chat_prompt_package_markdown
 from bugintel.core.result_evidence_chat_provider_gate import build_case_chat_provider_gate
+from bugintel.core.result_evidence_chat_provider_dry_run import build_case_chat_provider_dry_run
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -2870,6 +2871,86 @@ def case_chat_provider_gate_command(
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only checks a local provider gate. "
         "It does not call LLM providers, send requests, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-provider-dry-run")
+def case_chat_provider_dry_run_command(
+    prompt_package_file: Path = typer.Argument(..., help="Path to case-chat prompt package JSON."),
+    provider_name: str = typer.Option("disabled", "--provider", help="Future LLM provider name. Current default is disabled."),
+    allow_provider_execution: bool = typer.Option(
+        False,
+        "--allow-provider-execution",
+        help="Explicit future-provider execution opt-in. This command still does not run a real provider.",
+    ),
+    require_prompt_audit_pass: bool = typer.Option(
+        True,
+        "--require-prompt-audit-pass/--no-require-prompt-audit-pass",
+        help="Require a passing prompt audit before any future provider execution.",
+    ),
+    model: str = typer.Option("", "--model", help="Future model label. Does not trigger provider execution."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Dry-run the local prompt audit, provider gate, and disabled provider stub."""
+    if not prompt_package_file.exists():
+        console.print(f"[bold red]Case chat prompt package JSON not found:[/bold red] {prompt_package_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(prompt_package_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid case chat prompt package JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Case chat prompt package JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        dry_run = build_case_chat_provider_dry_run(
+            data,
+            provider_name=provider_name,
+            allow_provider_execution=allow_provider_execution,
+            require_prompt_audit_pass=require_prompt_audit_pass,
+            model=model,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid case chat provider dry-run input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    dry_run_data = dry_run.to_dict()
+    markdown = dry_run.to_markdown()
+
+    table = Table(title="Case Chat Provider Dry Run")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Provider", dry_run.provider_name)
+    table.add_row("Audit status", dry_run.audit_status)
+    table.add_row("Gate allowed", str(dry_run.gate_allowed))
+    table.add_row("Gate reason", dry_run.gate_reason)
+    table.add_row("Disabled provider status", dry_run.disabled_provider_status)
+    table.add_row("Provider execution performed", "false")
+    console.print(table)
+
+    if dry_run.required_actions:
+        console.print("[bold yellow]Required actions:[/bold yellow]")
+        for action in dry_run.required_actions:
+            console.print(f"- {action}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case chat provider dry-run Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(dry_run_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved case chat provider dry-run JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only performs a local dry-run. "
+        "It does not call real LLM providers, send requests, execute tools, or confirm vulnerabilities automatically."
     )
 
 
