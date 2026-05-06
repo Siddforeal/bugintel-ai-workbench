@@ -1478,3 +1478,32 @@ This helps the local research workflow:
     → final human-written report
 
 The command remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Case Chat Prompt Package
+
+Blackhole can build a safe, reviewable prompt package from local case memory and grounded answers.
+
+Example:
+
+    blackhole case-chat-prompt-package --case-memory /tmp/case-memory.json --grounded-answer /tmp/grounded-answer.json --question "can I submit this?" --output-file /tmp/case-chat-prompt.md --json-output /tmp/case-chat-prompt.json
+
+This is a bridge toward optional future LLM-assisted case chat, but it does not call any provider. It only packages local artifacts into a redacted prompt for human review.
+
+The package includes:
+
+- system prompt
+- user prompt
+- local artifact JSON
+- safety notes
+- redaction status
+- provider_execution=false
+
+This helps the local research workflow:
+
+    local case memory
+    → grounded answer
+    → case-chat-prompt-package
+    → human review
+    → optional future LLM provider gate
+
+The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.

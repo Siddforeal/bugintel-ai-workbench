@@ -534,3 +534,27 @@ The case memory includes:
 - local-only and planning-only safety metadata
 
 The case memory builder remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Case Chat Prompt Package
+
+Build a safe, reviewable LLM prompt package from local case-chat artifacts without calling any provider:
+
+    blackhole case-chat-prompt-package --case-memory /tmp/case-memory.json --question "can I submit this?" --output-file /tmp/case-chat-prompt.md --json-output /tmp/case-chat-prompt.json
+
+Use a grounded answer for more context:
+
+    blackhole case-chat-prompt-package --case-memory /tmp/case-memory.json --grounded-answer /tmp/grounded-answer.json --question "what should I do next?" --output-file /tmp/case-chat-prompt.md --json-output /tmp/case-chat-prompt.json
+
+The prompt package includes:
+
+- system prompt
+- user prompt
+- local artifact JSON
+- question
+- artifact kinds
+- redaction status
+- safety notes
+- provider_execution=false
+- local-only and planning-only safety metadata
+
+This command does not call any LLM provider. It only prepares a local prompt package for human review.
