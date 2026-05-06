@@ -58,6 +58,7 @@ from bugintel.core.result_evidence_priority_ranking import build_result_evidence
 from bugintel.core.result_evidence_multi_agent_review import build_result_evidence_multi_agent_review_plan
 from bugintel.core.result_evidence_report_assistant import build_case_report_assistant_draft
 from bugintel.core.result_evidence_chat_context import answer_case_context_question
+from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
 from bugintel.core.research_state_apply import apply_research_state_update_plan
@@ -2446,6 +2447,75 @@ def case_chat_context_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only answers from local case artifacts. "
+        "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("chat-context-router")
+def chat_context_router_command(
+    artifact_file: Path = typer.Argument(..., help="Path to a local result evidence artifact JSON."),
+    output_file: Path | None = typer.Option(
+        None,
+        "--output-file",
+        "--output",
+        help="Optional Markdown output path.",
+    ),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        help="Optional JSON output path.",
+    ),
+    source: str = typer.Option("result-evidence-chat-context-router", "--source", help="Router source label."),
+):
+    """Route a local artifact to supported chat/review commands and questions."""
+    if not artifact_file.exists():
+        console.print(f"[bold red]Artifact JSON not found:[/bold red] {artifact_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        data = json.loads(artifact_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid artifact JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(data, dict):
+        console.print("[bold red]Artifact JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        route = route_chat_context(data, source=source)
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid chat context router input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    route_data = route.to_dict()
+    markdown = route.to_markdown()
+
+    table = Table(title="Chat Context Router")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Artifact", str(artifact_file))
+    table.add_row("Artifact kind", route.artifact_kind)
+    table.add_row("Recommended command", route.recommended_command)
+    table.add_row("Supported questions", str(len(route.supported_questions)))
+    table.add_row("Execution", "planning-only; local artifact routing only")
+    console.print(table)
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved chat context route Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(route_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved chat context route JSON:[/bold green] {json_output}")
+
+    if not output_file and not json_output:
+        console.print(markdown)
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only routes local artifacts. "
         "It does not send requests, execute tools, call LLM providers, or confirm vulnerabilities automatically."
     )
 
