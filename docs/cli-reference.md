@@ -376,3 +376,29 @@ Each agent task includes:
 - risk flags
 
 The multi-agent review planner remains deterministic, local-only, and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Case-to-Report Assistant
+
+Build a planning-only report skeleton from local case intelligence artifacts:
+
+    blackhole case-report-assistant /tmp/case-summary.json --output-file /tmp/report-assistant.md --json-output /tmp/report-assistant.json
+
+Use priority ranking and multi-agent review artifacts for richer output:
+
+    blackhole case-report-assistant /tmp/case-summary.json --ranking /tmp/priority-ranking.json --multi-agent-review /tmp/multi-agent-review.json --output-file /tmp/report-assistant.md --json-output /tmp/report-assistant.json
+
+The report assistant produces:
+
+- candidate title options
+- primary candidate summary
+- affected endpoint candidates
+- summary draft
+- proof-of-concept skeleton
+- evidence checklist
+- missing evidence section
+- specialist review notes
+- next actions
+- impact wording guardrails
+- final report readiness state
+
+The report assistant remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, mutate targets, bypass authorization, or confirm vulnerabilities.

@@ -1316,3 +1316,37 @@ This helps the result evidence workflow:
     → final human-written report
 
 The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Case-to-Report Assistant
+
+Blackhole can turn local case intelligence artifacts into a planning-only report skeleton.
+
+Example:
+
+    blackhole case-report-assistant /tmp/case-summary.json --ranking /tmp/priority-ranking.json --multi-agent-review /tmp/multi-agent-review.json --output-file /tmp/report-assistant.md --json-output /tmp/report-assistant.json
+
+This is the bridge from local research intelligence to human report writing. It uses case summary, priority ranking, and multi-agent review artifacts to generate a cautious draft structure.
+
+The assistant includes:
+
+- title candidates
+- affected endpoints
+- summary draft
+- proof-of-concept skeleton
+- evidence checklist
+- missing evidence
+- specialist review notes
+- next actions
+- impact wording guardrails
+- final readiness state
+
+This helps the result evidence workflow:
+
+    result-evidence-case-summary
+    → result-evidence-priority-ranking
+    → result-evidence-multi-agent-review
+    → case-report-assistant
+    → manual evidence capture
+    → final human-written report
+
+The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
