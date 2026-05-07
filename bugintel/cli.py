@@ -65,6 +65,7 @@ from bugintel.core.result_evidence_chat_provider_gate import build_case_chat_pro
 from bugintel.core.result_evidence_chat_provider_dry_run import build_case_chat_provider_dry_run
 from bugintel.core.result_evidence_chat_provider_result import import_case_chat_provider_result
 from bugintel.core.result_evidence_chat_provider_result_review import review_case_chat_provider_result
+from bugintel.core.result_evidence_provider_action_plan import build_provider_suggestion_action_plan
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -3118,6 +3119,90 @@ def case_chat_provider_result_review_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only reviews imported provider output as untrusted text. "
+        "It does not call LLM providers, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-suggestion-action-plan")
+def case_chat_suggestion_action_plan_command(
+    provider_review_file: Path = typer.Option(..., "--provider-review", help="Path to provider result review JSON."),
+    case_memory_file: Path | None = typer.Option(None, "--case-memory", help="Optional case memory JSON."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Build a safe manual action plan from a reviewed provider suggestion."""
+    if not provider_review_file.exists():
+        console.print(f"[bold red]Provider result review JSON not found:[/bold red] {provider_review_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        provider_review = json.loads(provider_review_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid provider result review JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(provider_review, dict):
+        console.print("[bold red]Provider result review JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    case_memory = None
+    if case_memory_file:
+        if not case_memory_file.exists():
+            console.print(f"[bold red]Case memory JSON not found:[/bold red] {case_memory_file}")
+            raise typer.Exit(code=1)
+
+        try:
+            case_memory = json.loads(case_memory_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            console.print(f"[bold red]Invalid case memory JSON:[/bold red] {exc}")
+            raise typer.Exit(code=2)
+
+        if not isinstance(case_memory, dict):
+            console.print("[bold red]Case memory JSON must be an object.[/bold red]")
+            raise typer.Exit(code=2)
+
+    try:
+        plan = build_provider_suggestion_action_plan(
+            provider_review,
+            case_memory=case_memory,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid suggestion action plan input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    plan_data = plan.to_dict()
+    markdown = plan.to_markdown()
+
+    table = Table(title="Provider Suggestion Action Plan")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Provider review", str(provider_review_file))
+    table.add_row("Recommendation", plan.recommendation)
+    table.add_row("Approved actions", str(len(plan.approved_actions)))
+    table.add_row("Needs evidence", str(len(plan.evidence_needed_actions)))
+    table.add_row("Rejected actions", str(len(plan.rejected_actions)))
+    table.add_row("Missing evidence", str(len(plan.missing_evidence)))
+    table.add_row("Provider execution by Blackhole", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    if plan.report_guardrails:
+        console.print("[bold yellow]Report guardrails:[/bold yellow]")
+        for guardrail in plan.report_guardrails:
+            console.print(f"- {guardrail}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved suggestion action plan Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(plan_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved suggestion action plan JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only turns reviewed provider suggestions into a local manual action plan. "
         "It does not call LLM providers, execute tools, or confirm vulnerabilities automatically."
     )
 
