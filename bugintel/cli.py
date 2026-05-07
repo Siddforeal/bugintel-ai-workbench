@@ -63,6 +63,7 @@ from bugintel.core.result_evidence_case_memory import build_result_evidence_case
 from bugintel.core.result_evidence_chat_prompt import build_case_chat_prompt_package, render_case_chat_prompt_package_markdown
 from bugintel.core.result_evidence_chat_provider_gate import build_case_chat_provider_gate
 from bugintel.core.result_evidence_chat_provider_dry_run import build_case_chat_provider_dry_run
+from bugintel.core.result_evidence_chat_provider_result import import_case_chat_provider_result
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -2951,6 +2952,75 @@ def case_chat_provider_dry_run_command(
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only performs a local dry-run. "
         "It does not call real LLM providers, send requests, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-provider-result-import")
+def case_chat_provider_result_import_command(
+    provider_result_file: Path = typer.Option(..., "--provider-result", help="Path to manually saved provider output text."),
+    prompt_package_file: Path = typer.Option(..., "--prompt-package", help="Path to case-chat prompt package JSON."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Import manually saved provider output as an untrusted local suggestion."""
+    if not provider_result_file.exists():
+        console.print(f"[bold red]Provider result text not found:[/bold red] {provider_result_file}")
+        raise typer.Exit(code=1)
+
+    if not prompt_package_file.exists():
+        console.print(f"[bold red]Case chat prompt package JSON not found:[/bold red] {prompt_package_file}")
+        raise typer.Exit(code=1)
+
+    provider_output = provider_result_file.read_text(encoding="utf-8")
+
+    try:
+        prompt_package = json.loads(prompt_package_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid case chat prompt package JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(prompt_package, dict):
+        console.print("[bold red]Case chat prompt package JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        imported = import_case_chat_provider_result(provider_output, prompt_package)
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid provider result import input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    imported_data = imported.to_dict()
+    markdown = imported.to_markdown()
+
+    table = Table(title="Imported Case Chat Provider Result")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Provider result", str(provider_result_file))
+    table.add_row("Prompt package", str(prompt_package_file))
+    table.add_row("Suggested actions", str(len(imported.suggested_actions)))
+    table.add_row("Warning flags", str(len(imported.warning_flags)))
+    table.add_row("Untrusted suggestion", "true")
+    table.add_row("Provider execution by Blackhole", "false")
+    console.print(table)
+
+    if imported.warning_flags:
+        console.print("[bold yellow]Warning flags:[/bold yellow]")
+        for flag in imported.warning_flags:
+            console.print(f"- {flag}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved imported provider result Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(imported_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved imported provider result JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only imports local provider output as an untrusted suggestion. "
+        "It does not call LLM providers, execute tools, or confirm vulnerabilities automatically."
     )
 
 
