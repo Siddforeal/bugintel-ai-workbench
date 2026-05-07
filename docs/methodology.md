@@ -1572,3 +1572,33 @@ This helps the local research workflow:
     → final human-written report
 
 The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Provider Suggestion Review Bridge
+
+Blackhole can review an imported provider suggestion against local case evidence.
+
+Example:
+
+    blackhole case-chat-provider-result-review --imported-result /tmp/imported-provider-result.json --case-memory /tmp/case-memory.json --grounded-answer /tmp/grounded-answer.json --output-file /tmp/provider-result-review.md --json-output /tmp/provider-result-review.json
+
+This is the safety bridge after importing manually saved model output. It helps decide whether the imported suggestion can be used as a planning note, needs more evidence, or contains unsafe/overclaimed parts.
+
+The review bridge:
+
+- treats provider output as untrusted
+- reviews suggested actions
+- flags overclaims
+- compares actions with local next actions
+- identifies missing evidence
+- keeps provider_execution=false
+- keeps vulnerability_confirmation=false
+
+This helps the local research workflow:
+
+    external/manual model output
+    → case-chat-provider-result-import
+    → case-chat-provider-result-review
+    → human verification against local evidence
+    → final human-written report
+
+The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.

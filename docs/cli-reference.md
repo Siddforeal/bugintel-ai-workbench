@@ -622,3 +622,32 @@ The importer records:
 - vulnerability_confirmation=false
 
 This command does not call any LLM provider. It only imports text that a human saved separately and marks it as untrusted.
+
+## Case Chat Provider Result Review
+
+Review an imported case-chat provider result against local evidence artifacts:
+
+    blackhole case-chat-provider-result-review --imported-result /tmp/imported-provider-result.json --case-memory /tmp/case-memory.json --grounded-answer /tmp/grounded-answer.json --output-file /tmp/provider-result-review.md --json-output /tmp/provider-result-review.json
+
+The review bridge checks:
+
+- imported provider suggestion status
+- suggested actions
+- warning flags
+- unsupported claims
+- missing evidence
+- overlap with local next actions
+- local evidence support
+
+The output includes:
+
+- recommendation
+- reviewed actions
+- warning flags
+- unsupported claims
+- missing evidence
+- untrusted_suggestion=true
+- provider_execution=false
+- vulnerability_confirmation=false
+
+This command does not call any LLM provider. It only reviews imported local text against local evidence artifacts.
