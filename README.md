@@ -8,7 +8,7 @@ It is not a scanner.
 
 The long-term goal is to become a world-class AI-assisted security research system that can reason over structured case memory, prioritize attack surfaces, plan validation safely, and help researchers produce high-quality evidence and reports.
 
-Current version: 0.59.0
+Current version: 0.60.0
 
 ## Status
 
@@ -142,3 +142,19 @@ Do not use it for unauthorized exploitation, credential theft, persistence, dest
 ## License
 
 MIT License.
+
+## v0.60.0 - Case Chat Suggestion Action Plan
+
+Blackhole can now convert a reviewed provider suggestion into a safe, local-only manual action plan.
+
+The workflow is:
+
+1. Build a case-chat prompt package.
+2. Gate and dry-run provider use.
+3. Import manually saved provider output as an untrusted suggestion.
+4. Review the suggestion against local evidence.
+5. Convert the reviewed suggestion into a manual action plan.
+
+The new `case-chat-suggestion-action-plan` command separates approved planning actions, actions needing more local evidence, rejected or unsafe actions, missing evidence, report guardrails, and safety metadata.
+
+This remains local-only and safety-gated. Blackhole does not execute provider suggestions, does not call LLM providers, does not run tools, and does not confirm vulnerabilities automatically.

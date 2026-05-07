@@ -1602,3 +1602,11 @@ This helps the local research workflow:
     → final human-written report
 
 The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Provider Suggestion Action Plans
+
+After importing and reviewing a provider result, Blackhole can turn the reviewed suggestion into a manual action plan.
+
+This step is intentionally conservative. Provider output is treated as untrusted. The action plan only organizes what a human researcher can review next, including approved planning actions, evidence gaps, rejected actions, and report guardrails.
+
+The command does not call a provider, execute tools, send requests, run a browser, or confirm vulnerabilities.

@@ -4,7 +4,7 @@
 
 Blackhole AI Workbench is a human-in-the-loop security research workbench for authorized vulnerability discovery, endpoint intelligence, response analysis, and structured evidence collection.
 
-Current version: 0.59.0
+Current version: 0.60.0
 
 ## Research Goal
 
@@ -916,3 +916,20 @@ Blackhole now has a stub runner for the future Playwright adapter.
 The adapter stub returns `status: not_implemented` as a browser capture result.
 
 It proves the adapter can hand results into the evidence pipeline shape, but it still does not launch a browser, capture network traffic, save screenshots, save HTML, or create traces.
+
+## v0.60.0 - Case Chat Suggestion Action Plan
+
+The provider suggestion action plan bridge converts reviewed provider suggestions into safe local manual next steps.
+
+It is designed for the end of the case-chat provider workflow:
+
+    case-chat-prompt-package
+    → case-chat-provider-gate
+    → case-chat-provider-dry-run
+    → case-chat-provider-result-import
+    → case-chat-provider-result-review
+    → case-chat-suggestion-action-plan
+
+The output keeps provider suggestions untrusted until they are mapped against local evidence. The generated plan clearly marks what can be manually investigated, what needs additional evidence, and what must be rejected or avoided.
+
+This feature keeps Blackhole deterministic and local-first by default. It does not execute provider suggestions or confirm vulnerabilities automatically.

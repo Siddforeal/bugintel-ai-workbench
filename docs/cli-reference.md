@@ -651,3 +651,32 @@ The output includes:
 - vulnerability_confirmation=false
 
 This command does not call any LLM provider. It only reviews imported local text against local evidence artifacts.
+
+## case-chat-suggestion-action-plan
+
+Build a safe manual action plan from a reviewed provider suggestion.
+
+Example:
+
+    blackhole case-chat-suggestion-action-plan \
+      --provider-review /tmp/provider-review.json \
+      --case-memory /tmp/case-memory.json \
+      --output /tmp/suggestion-action-plan.md \
+      --json-output /tmp/suggestion-action-plan.json
+
+The command reads a local provider review artifact and produces a planning-only action plan. It separates:
+
+- approved manual planning actions
+- actions that need more local evidence
+- rejected or unsafe actions
+- missing evidence
+- report guardrails
+- safety metadata
+
+Safety properties:
+
+- no provider execution
+- no LLM provider calls
+- no browser execution
+- no curl or Kali execution
+- no automatic vulnerability confirmation
