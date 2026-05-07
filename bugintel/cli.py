@@ -64,6 +64,7 @@ from bugintel.core.result_evidence_chat_prompt import build_case_chat_prompt_pac
 from bugintel.core.result_evidence_chat_provider_gate import build_case_chat_provider_gate
 from bugintel.core.result_evidence_chat_provider_dry_run import build_case_chat_provider_dry_run
 from bugintel.core.result_evidence_chat_provider_result import import_case_chat_provider_result
+from bugintel.core.result_evidence_chat_provider_result_review import review_case_chat_provider_result
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -3020,6 +3021,103 @@ def case_chat_provider_result_import_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only imports local provider output as an untrusted suggestion. "
+        "It does not call LLM providers, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-provider-result-review")
+def case_chat_provider_result_review_command(
+    imported_result_file: Path = typer.Option(..., "--imported-result", help="Path to imported provider result JSON."),
+    case_memory_file: Path | None = typer.Option(None, "--case-memory", help="Optional case memory JSON."),
+    grounded_answer_file: Path | None = typer.Option(None, "--grounded-answer", help="Optional grounded answer JSON."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Review an imported provider result against local evidence artifacts."""
+    if not imported_result_file.exists():
+        console.print(f"[bold red]Imported provider result JSON not found:[/bold red] {imported_result_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        imported_result = json.loads(imported_result_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid imported provider result JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(imported_result, dict):
+        console.print("[bold red]Imported provider result JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    def load_optional_json(path: Path | None, label: str) -> dict | None:
+        if path is None:
+            return None
+
+        if not path.exists():
+            console.print(f"[bold red]{label} JSON not found:[/bold red] {path}")
+            raise typer.Exit(code=1)
+
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            console.print(f"[bold red]Invalid {label} JSON:[/bold red] {exc}")
+            raise typer.Exit(code=2)
+
+        if not isinstance(data, dict):
+            console.print(f"[bold red]{label} JSON must be an object.[/bold red]")
+            raise typer.Exit(code=2)
+
+        return data
+
+    case_memory = load_optional_json(case_memory_file, "Case memory")
+    grounded_answer = load_optional_json(grounded_answer_file, "Grounded answer")
+
+    try:
+        review = review_case_chat_provider_result(
+            imported_result,
+            case_memory=case_memory,
+            grounded_answer=grounded_answer,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid provider result review input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    review_data = review.to_dict()
+    markdown = review.to_markdown()
+
+    table = Table(title="Provider Suggestion Review")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Imported result", str(imported_result_file))
+    table.add_row("Recommendation", review.recommendation)
+    table.add_row("Reviewed actions", str(len(review.reviewed_actions)))
+    table.add_row("Warning flags", str(len(review.warning_flags)))
+    table.add_row("Unsupported claims", str(len(review.unsupported_claims)))
+    table.add_row("Untrusted suggestion", "true")
+    table.add_row("Provider execution by Blackhole", "false")
+    console.print(table)
+
+    if review.warning_flags:
+        console.print("[bold yellow]Warning flags:[/bold yellow]")
+        for flag in review.warning_flags:
+            console.print(f"- {flag}")
+
+    if review.unsupported_claims:
+        console.print("[bold yellow]Unsupported claims:[/bold yellow]")
+        for claim in review.unsupported_claims:
+            console.print(f"- {claim}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved provider result review Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(review_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved provider result review JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only reviews imported provider output as untrusted text. "
         "It does not call LLM providers, execute tools, or confirm vulnerabilities automatically."
     )
 
