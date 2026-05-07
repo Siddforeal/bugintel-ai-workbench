@@ -1544,3 +1544,31 @@ The dry-run combines:
 This gives a full local preview of what would happen before any future LLM provider execution.
 
 The command remains local-only and planning-only. It does not call real LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.
+
+## Case Chat Provider Result Importer
+
+Blackhole can import manually saved provider output as an untrusted local suggestion.
+
+Example:
+
+    blackhole case-chat-provider-result-import --provider-result /tmp/provider-output.txt --prompt-package /tmp/case-chat-prompt.json --output-file /tmp/imported-provider-result.md --json-output /tmp/imported-provider-result.json
+
+This is useful when a human has used a model outside Blackhole and wants to preserve the output safely inside the case workflow.
+
+The importer:
+
+- marks output as untrusted
+- extracts suggested actions
+- flags overclaims such as confirmed vulnerability or severity claims
+- keeps provider_execution=false
+- keeps vulnerability_confirmation=false
+
+This helps the local research workflow:
+
+    external/manual model output
+    → case-chat-provider-result-import
+    → untrusted local suggestion
+    → human verification against local evidence
+    → final human-written report
+
+The command remains local-only and planning-only. It does not call LLM providers, send requests, run curl, launch browsers, use Kali tools, mutate targets, bypass authorization, or confirm vulnerabilities.

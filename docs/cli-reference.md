@@ -604,3 +604,21 @@ The output includes:
 - disabled provider reason
 - required actions
 - local-only and planning-only safety metadata
+
+## Case Chat Provider Result Importer
+
+Import manually saved provider output as an untrusted local suggestion:
+
+    blackhole case-chat-provider-result-import --provider-result /tmp/provider-output.txt --prompt-package /tmp/case-chat-prompt.json --output-file /tmp/imported-provider-result.md --json-output /tmp/imported-provider-result.json
+
+The importer records:
+
+- provider output text
+- suggested actions extracted from the text
+- warning flags for overclaims or unsafe wording
+- source prompt package metadata
+- untrusted_suggestion=true
+- provider_execution=false
+- vulnerability_confirmation=false
+
+This command does not call any LLM provider. It only imports text that a human saved separately and marks it as untrusted.
