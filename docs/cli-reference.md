@@ -712,3 +712,37 @@ Safety properties:
 - no browser execution
 - no curl or Kali execution
 - no automatic vulnerability confirmation
+
+## case-chat-action-plan-apply-preview-review
+
+Review a case-chat action plan apply preview before any future state-write command exists.
+
+Example:
+
+    blackhole case-chat-action-plan-apply-preview-review \
+      --apply-preview /tmp/apply-preview.json \
+      --case-memory /tmp/case-memory.json \
+      --output /tmp/apply-preview-review.md \
+      --json-output /tmp/apply-preview-review.json
+
+The command reads a local apply preview artifact and produces a planning-only review. It flags:
+
+- duplicate update candidates
+- blocked actions
+- missing evidence
+- unsafe or rejected update risks
+- report overclaim risks
+- safe planning notes
+- report guardrails
+- safety metadata
+
+Safety properties:
+
+- no state mutation
+- no case memory write
+- no research state write
+- no provider execution
+- no LLM provider calls
+- no browser execution
+- no curl or Kali execution
+- no automatic vulnerability confirmation

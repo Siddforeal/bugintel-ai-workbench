@@ -1618,3 +1618,11 @@ After building a provider suggestion action plan, Blackhole can preview safe loc
 The preview step is deliberately non-mutating. It shows what could be added later, but it does not write any state files. Evidence-needed and rejected actions remain blocked.
 
 This keeps the workflow useful for human-in-the-loop research while preserving the local-only safety model.
+
+## Apply Preview Reviews
+
+After generating an action plan apply preview, Blackhole can review the preview before any state-writing feature exists.
+
+The review checks for duplicate update candidates, blocked actions, evidence gaps, unsafe or rejected items, and report overclaim risks. Safe items remain planning notes only.
+
+This protects the local-only workflow from accidentally treating provider-derived planning text as proof or as an approved state mutation.

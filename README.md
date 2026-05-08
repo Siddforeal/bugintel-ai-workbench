@@ -8,7 +8,7 @@ It is not a scanner.
 
 The long-term goal is to become a world-class AI-assisted security research system that can reason over structured case memory, prioritize attack surfaces, plan validation safely, and help researchers produce high-quality evidence and reports.
 
-Current version: 0.61.0
+Current version: 0.62.0
 
 ## Status
 
@@ -175,3 +175,22 @@ The preview separates:
 - safety metadata
 
 This is preview-only. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.
+
+## v0.62.0 - Case Chat Apply Preview Reviewer
+
+Blackhole can now review a case-chat action plan apply preview before any future state-write command exists.
+
+The new `case-chat-action-plan-apply-preview-review` command reads a v0.61.0 apply preview JSON and checks whether the preview is safe to keep as a planning note.
+
+The review flags:
+
+- duplicate update candidates
+- blocked actions
+- missing evidence
+- unsafe or rejected update risks
+- report overclaim risks
+- safe planning notes
+- report guardrails
+- safety metadata
+
+This is still review-only and local-only. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.
