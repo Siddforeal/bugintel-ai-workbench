@@ -8,7 +8,7 @@ It is not a scanner.
 
 The long-term goal is to become a world-class AI-assisted security research system that can reason over structured case memory, prioritize attack surfaces, plan validation safely, and help researchers produce high-quality evidence and reports.
 
-Current version: 0.60.0
+Current version: 0.61.0
 
 ## Status
 
@@ -158,3 +158,20 @@ The workflow is:
 The new `case-chat-suggestion-action-plan` command separates approved planning actions, actions needing more local evidence, rejected or unsafe actions, missing evidence, report guardrails, and safety metadata.
 
 This remains local-only and safety-gated. Blackhole does not execute provider suggestions, does not call LLM providers, does not run tools, and does not confirm vulnerabilities automatically.
+
+## v0.61.0 - Case Chat Action Plan Apply Preview
+
+Blackhole can now turn a reviewed provider suggestion action plan into a safe local apply preview.
+
+The new `case-chat-action-plan-apply-preview` command reads the v0.60.0 suggestion action plan JSON and previews what could later be added to local case memory or research state.
+
+The preview separates:
+
+- case memory update candidates
+- research state update candidates
+- blocked updates
+- missing evidence
+- report guardrails
+- safety metadata
+
+This is preview-only. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.

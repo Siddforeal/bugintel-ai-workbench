@@ -680,3 +680,35 @@ Safety properties:
 - no browser execution
 - no curl or Kali execution
 - no automatic vulnerability confirmation
+
+## case-chat-action-plan-apply-preview
+
+Preview safe local case memory and research state updates from a suggestion action plan.
+
+Example:
+
+    blackhole case-chat-action-plan-apply-preview \
+      --action-plan /tmp/suggestion-action-plan.json \
+      --case-memory /tmp/case-memory.json \
+      --output /tmp/apply-preview.md \
+      --json-output /tmp/apply-preview.json
+
+The command reads a local action plan artifact and produces a planning-only apply preview. It separates:
+
+- case memory update previews
+- research state update previews
+- blocked updates
+- missing evidence
+- report guardrails
+- safety metadata
+
+Safety properties:
+
+- no state mutation
+- no case memory write
+- no research state write
+- no provider execution
+- no LLM provider calls
+- no browser execution
+- no curl or Kali execution
+- no automatic vulnerability confirmation

@@ -1610,3 +1610,11 @@ After importing and reviewing a provider result, Blackhole can turn the reviewed
 This step is intentionally conservative. Provider output is treated as untrusted. The action plan only organizes what a human researcher can review next, including approved planning actions, evidence gaps, rejected actions, and report guardrails.
 
 The command does not call a provider, execute tools, send requests, run a browser, or confirm vulnerabilities.
+
+## Action Plan Apply Previews
+
+After building a provider suggestion action plan, Blackhole can preview safe local updates for case memory and research state.
+
+The preview step is deliberately non-mutating. It shows what could be added later, but it does not write any state files. Evidence-needed and rejected actions remain blocked.
+
+This keeps the workflow useful for human-in-the-loop research while preserving the local-only safety model.
