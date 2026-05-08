@@ -66,6 +66,7 @@ from bugintel.core.result_evidence_chat_provider_dry_run import build_case_chat_
 from bugintel.core.result_evidence_chat_provider_result import import_case_chat_provider_result
 from bugintel.core.result_evidence_chat_provider_result_review import review_case_chat_provider_result
 from bugintel.core.result_evidence_provider_action_plan import build_provider_suggestion_action_plan
+from bugintel.core.result_evidence_action_plan_apply_preview import build_provider_suggestion_action_plan_apply_preview
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -3204,6 +3205,90 @@ def case_chat_suggestion_action_plan_command(
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only turns reviewed provider suggestions into a local manual action plan. "
         "It does not call LLM providers, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-action-plan-apply-preview")
+def case_chat_action_plan_apply_preview_command(
+    action_plan_file: Path = typer.Option(..., "--action-plan", help="Path to suggestion action plan JSON."),
+    case_memory_file: Path | None = typer.Option(None, "--case-memory", help="Optional case memory JSON."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Preview safe local case memory / research state updates from an action plan."""
+    if not action_plan_file.exists():
+        console.print(f"[bold red]Suggestion action plan JSON not found:[/bold red] {action_plan_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        action_plan = json.loads(action_plan_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid suggestion action plan JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(action_plan, dict):
+        console.print("[bold red]Suggestion action plan JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    case_memory = None
+    if case_memory_file:
+        if not case_memory_file.exists():
+            console.print(f"[bold red]Case memory JSON not found:[/bold red] {case_memory_file}")
+            raise typer.Exit(code=1)
+
+        try:
+            case_memory = json.loads(case_memory_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            console.print(f"[bold red]Invalid case memory JSON:[/bold red] {exc}")
+            raise typer.Exit(code=2)
+
+        if not isinstance(case_memory, dict):
+            console.print("[bold red]Case memory JSON must be an object.[/bold red]")
+            raise typer.Exit(code=2)
+
+    try:
+        preview = build_provider_suggestion_action_plan_apply_preview(
+            action_plan,
+            case_memory=case_memory,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid action plan apply preview input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    preview_data = preview.to_dict()
+    markdown = preview.to_markdown()
+
+    table = Table(title="Action Plan Apply Preview")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Action plan", str(action_plan_file))
+    table.add_row("Recommendation", preview.recommendation)
+    table.add_row("Case memory update previews", str(len(preview.case_memory_updates)))
+    table.add_row("Research state update previews", str(len(preview.research_state_updates)))
+    table.add_row("Blocked updates", str(len(preview.blocked_updates)))
+    table.add_row("Missing evidence", str(len(preview.missing_evidence)))
+    table.add_row("State mutation", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    if preview.report_guardrails:
+        console.print("[bold yellow]Report guardrails:[/bold yellow]")
+        for guardrail in preview.report_guardrails:
+            console.print(f"- {guardrail}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved action plan apply preview Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(preview_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved action plan apply preview JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only previews local case memory / research state updates. "
+        "It does not write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
     )
 
 
