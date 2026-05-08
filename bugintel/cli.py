@@ -67,6 +67,7 @@ from bugintel.core.result_evidence_chat_provider_result import import_case_chat_
 from bugintel.core.result_evidence_chat_provider_result_review import review_case_chat_provider_result
 from bugintel.core.result_evidence_provider_action_plan import build_provider_suggestion_action_plan
 from bugintel.core.result_evidence_action_plan_apply_preview import build_provider_suggestion_action_plan_apply_preview
+from bugintel.core.result_evidence_action_plan_apply_preview_review import build_action_plan_apply_preview_review
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -3288,6 +3289,92 @@ def case_chat_action_plan_apply_preview_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only previews local case memory / research state updates. "
+        "It does not write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-action-plan-apply-preview-review")
+def case_chat_action_plan_apply_preview_review_command(
+    apply_preview_file: Path = typer.Option(..., "--apply-preview", help="Path to action plan apply preview JSON."),
+    case_memory_file: Path | None = typer.Option(None, "--case-memory", help="Optional case memory JSON."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Review an action plan apply preview before any future state write."""
+    if not apply_preview_file.exists():
+        console.print(f"[bold red]Action plan apply preview JSON not found:[/bold red] {apply_preview_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        apply_preview = json.loads(apply_preview_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid action plan apply preview JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(apply_preview, dict):
+        console.print("[bold red]Action plan apply preview JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    case_memory = None
+    if case_memory_file:
+        if not case_memory_file.exists():
+            console.print(f"[bold red]Case memory JSON not found:[/bold red] {case_memory_file}")
+            raise typer.Exit(code=1)
+
+        try:
+            case_memory = json.loads(case_memory_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            console.print(f"[bold red]Invalid case memory JSON:[/bold red] {exc}")
+            raise typer.Exit(code=2)
+
+        if not isinstance(case_memory, dict):
+            console.print("[bold red]Case memory JSON must be an object.[/bold red]")
+            raise typer.Exit(code=2)
+
+    try:
+        review = build_action_plan_apply_preview_review(
+            apply_preview,
+            case_memory=case_memory,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid action plan apply preview review input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    review_data = review.to_dict()
+    markdown = review.to_markdown()
+
+    table = Table(title="Action Plan Apply Preview Review")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Apply preview", str(apply_preview_file))
+    table.add_row("Recommendation", review.recommendation)
+    table.add_row("Duplicate candidates", str(len(review.duplicate_update_candidates)))
+    table.add_row("Blocked actions", str(len(review.blocked_action_findings)))
+    table.add_row("Evidence gaps", str(len(review.evidence_gap_findings)))
+    table.add_row("Unsafe update risks", str(len(review.unsafe_update_findings)))
+    table.add_row("Overclaim risks", str(len(review.overclaim_risks)))
+    table.add_row("Safe planning notes", str(len(review.safe_planning_notes)))
+    table.add_row("State mutation", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    if review.report_guardrails:
+        console.print("[bold yellow]Report guardrails:[/bold yellow]")
+        for guardrail in review.report_guardrails:
+            console.print(f"- {guardrail}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved action plan apply preview review Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(review_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved action plan apply preview review JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only reviews a local apply preview. "
         "It does not write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
     )
 
