@@ -4,7 +4,7 @@
 
 Blackhole AI Workbench is a human-in-the-loop security research workbench for authorized vulnerability discovery, endpoint intelligence, response analysis, and structured evidence collection.
 
-Current version: 0.62.0
+Current version: 0.63.0
 
 ## Research Goal
 
@@ -968,5 +968,25 @@ It extends the case-chat provider workflow:
     → case-chat-action-plan-apply-preview-review
 
 The output helps a human researcher decide whether apply-preview candidates should remain planning notes, be deduplicated, be blocked, or require more evidence.
+
+This feature is intentionally non-mutating. It does not write state, execute tools, call providers, or confirm vulnerabilities.
+
+## v0.63.0 - Case Chat Reviewed Apply Packet
+
+The reviewed apply packet turns a v0.62.0 apply-preview review into a final human approval packet.
+
+It extends the case-chat provider workflow:
+
+    case-chat-prompt-package
+    → case-chat-provider-gate
+    → case-chat-provider-dry-run
+    → case-chat-provider-result-import
+    → case-chat-provider-result-review
+    → case-chat-suggestion-action-plan
+    → case-chat-action-plan-apply-preview
+    → case-chat-action-plan-apply-preview-review
+    → case-chat-reviewed-apply-packet
+
+The output helps a human decide what can remain as approved planning notes, what must be deduplicated, what stays blocked, and what requires more evidence or safer wording.
 
 This feature is intentionally non-mutating. It does not write state, execute tools, call providers, or confirm vulnerabilities.

@@ -746,3 +746,39 @@ Safety properties:
 - no browser execution
 - no curl or Kali execution
 - no automatic vulnerability confirmation
+
+## case-chat-reviewed-apply-packet
+
+Build a final human approval packet from an apply-preview review.
+
+Example:
+
+    blackhole case-chat-reviewed-apply-packet \
+      --apply-preview-review /tmp/apply-preview-review.json \
+      --case-memory /tmp/case-memory.json \
+      --output /tmp/reviewed-apply-packet.md \
+      --json-output /tmp/reviewed-apply-packet.json
+
+The command reads a local apply-preview review artifact and produces a planning-only human approval packet. It separates:
+
+- approved planning-note updates
+- duplicate updates
+- blocked updates
+- evidence gaps
+- unsafe or rejected items
+- report overclaim risks
+- report guardrails
+- human approval checklist
+- safety metadata
+
+Safety properties:
+
+- human approval required
+- no state mutation
+- no case memory write
+- no research state write
+- no provider execution
+- no LLM provider calls
+- no browser execution
+- no curl or Kali execution
+- no automatic vulnerability confirmation

@@ -8,7 +8,7 @@ It is not a scanner.
 
 The long-term goal is to become a world-class AI-assisted security research system that can reason over structured case memory, prioritize attack surfaces, plan validation safely, and help researchers produce high-quality evidence and reports.
 
-Current version: 0.62.0
+Current version: 0.63.0
 
 ## Status
 
@@ -194,3 +194,23 @@ The review flags:
 - safety metadata
 
 This is still review-only and local-only. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.
+
+## v0.63.0 - Case Chat Reviewed Apply Packet
+
+Blackhole can now convert an apply-preview review into a final human approval packet.
+
+The new `case-chat-reviewed-apply-packet` command reads a v0.62.0 apply-preview review JSON and creates a planning-only packet for human approval.
+
+The packet separates:
+
+- approved planning-note updates
+- duplicate updates
+- blocked updates
+- evidence gaps
+- unsafe or rejected items
+- report overclaim risks
+- report guardrails
+- human approval checklist
+- safety metadata
+
+This remains non-mutating and local-only. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.

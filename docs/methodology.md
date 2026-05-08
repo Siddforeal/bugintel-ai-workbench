@@ -1626,3 +1626,11 @@ After generating an action plan apply preview, Blackhole can review the preview 
 The review checks for duplicate update candidates, blocked actions, evidence gaps, unsafe or rejected items, and report overclaim risks. Safe items remain planning notes only.
 
 This protects the local-only workflow from accidentally treating provider-derived planning text as proof or as an approved state mutation.
+
+## Reviewed Apply Packets
+
+After reviewing an action plan apply preview, Blackhole can create a final human approval packet.
+
+The packet separates approved planning notes from duplicates, blocked items, evidence gaps, unsafe or rejected suggestions, and report overclaim risks. It also includes a human approval checklist.
+
+This protects the workflow from treating provider-derived planning text as proof or as an approved state mutation.
