@@ -68,6 +68,7 @@ from bugintel.core.result_evidence_chat_provider_result_review import review_cas
 from bugintel.core.result_evidence_provider_action_plan import build_provider_suggestion_action_plan
 from bugintel.core.result_evidence_action_plan_apply_preview import build_provider_suggestion_action_plan_apply_preview
 from bugintel.core.result_evidence_action_plan_apply_preview_review import build_action_plan_apply_preview_review
+from bugintel.core.result_evidence_reviewed_apply_packet import build_reviewed_apply_packet
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -3375,6 +3376,93 @@ def case_chat_action_plan_apply_preview_review_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only reviews a local apply preview. "
+        "It does not write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-reviewed-apply-packet")
+def case_chat_reviewed_apply_packet_command(
+    apply_preview_review_file: Path = typer.Option(..., "--apply-preview-review", help="Path to apply preview review JSON."),
+    case_memory_file: Path | None = typer.Option(None, "--case-memory", help="Optional case memory JSON."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Build a final human approval packet from an apply-preview review."""
+    if not apply_preview_review_file.exists():
+        console.print(f"[bold red]Action plan apply preview review JSON not found:[/bold red] {apply_preview_review_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        apply_preview_review = json.loads(apply_preview_review_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid action plan apply preview review JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(apply_preview_review, dict):
+        console.print("[bold red]Action plan apply preview review JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    case_memory = None
+    if case_memory_file:
+        if not case_memory_file.exists():
+            console.print(f"[bold red]Case memory JSON not found:[/bold red] {case_memory_file}")
+            raise typer.Exit(code=1)
+
+        try:
+            case_memory = json.loads(case_memory_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            console.print(f"[bold red]Invalid case memory JSON:[/bold red] {exc}")
+            raise typer.Exit(code=2)
+
+        if not isinstance(case_memory, dict):
+            console.print("[bold red]Case memory JSON must be an object.[/bold red]")
+            raise typer.Exit(code=2)
+
+    try:
+        packet = build_reviewed_apply_packet(
+            apply_preview_review,
+            case_memory=case_memory,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid reviewed apply packet input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    packet_data = packet.to_dict()
+    markdown = packet.to_markdown()
+
+    table = Table(title="Reviewed Apply Packet")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Apply preview review", str(apply_preview_review_file))
+    table.add_row("Recommendation", packet.recommendation)
+    table.add_row("Approved planning updates", str(len(packet.approved_planning_updates)))
+    table.add_row("Duplicate updates", str(len(packet.duplicate_updates)))
+    table.add_row("Blocked updates", str(len(packet.blocked_updates)))
+    table.add_row("Evidence gaps", str(len(packet.evidence_gaps)))
+    table.add_row("Unsafe / rejected items", str(len(packet.unsafe_or_rejected_items)))
+    table.add_row("Overclaim risks", str(len(packet.overclaim_risks)))
+    table.add_row("Human approval required", "true")
+    table.add_row("State mutation", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    if packet.human_approval_checklist:
+        console.print("[bold yellow]Human approval checklist:[/bold yellow]")
+        for item in packet.human_approval_checklist:
+            console.print(f"- [ ] {item}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved reviewed apply packet Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(packet_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved reviewed apply packet JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only builds a human approval packet. "
         "It does not write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
     )
 
