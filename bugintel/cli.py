@@ -69,6 +69,7 @@ from bugintel.core.result_evidence_provider_action_plan import build_provider_su
 from bugintel.core.result_evidence_action_plan_apply_preview import build_provider_suggestion_action_plan_apply_preview
 from bugintel.core.result_evidence_action_plan_apply_preview_review import build_action_plan_apply_preview_review
 from bugintel.core.result_evidence_reviewed_apply_packet import build_reviewed_apply_packet
+from bugintel.core.result_evidence_reviewed_apply_packet_export_bundle import (build_bundle_artifact_from_path, build_reviewed_apply_packet_export_bundle)
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -3463,6 +3464,85 @@ def case_chat_reviewed_apply_packet_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only builds a human approval packet. "
+        "It does not write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-reviewed-apply-packet-export-bundle")
+def case_chat_reviewed_apply_packet_export_bundle_command(
+    reviewed_apply_packet_file: Path = typer.Option(..., "--reviewed-apply-packet", help="Path to reviewed apply packet JSON."),
+    artifact_files: list[Path] = typer.Option([], "--artifact", help="Optional local artifact path to reference in the bundle."),
+    artifact_role: str = typer.Option("supporting-artifact", "--artifact-role", help="Role to assign to included artifacts."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Build a local export bundle manifest from a reviewed apply packet."""
+    if not reviewed_apply_packet_file.exists():
+        console.print(f"[bold red]Reviewed apply packet JSON not found:[/bold red] {reviewed_apply_packet_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        reviewed_apply_packet = json.loads(reviewed_apply_packet_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid reviewed apply packet JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(reviewed_apply_packet, dict):
+        console.print("[bold red]Reviewed apply packet JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    artifact_refs = [
+        build_bundle_artifact_from_path(path, role=artifact_role).to_dict()
+        for path in artifact_files
+    ]
+
+    try:
+        bundle = build_reviewed_apply_packet_export_bundle(
+            reviewed_apply_packet,
+            artifact_refs=artifact_refs,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid reviewed apply packet export bundle input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    bundle_data = bundle.to_dict()
+    markdown = bundle.to_markdown()
+
+    table = Table(title="Reviewed Apply Packet Export Bundle")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Reviewed apply packet", str(reviewed_apply_packet_file))
+    table.add_row("Bundle ID", bundle.bundle_id)
+    table.add_row("Recommendation", bundle.recommendation)
+    table.add_row("Approved planning updates", str(bundle.packet_counts["approved_planning_updates"]))
+    table.add_row("Duplicate updates", str(bundle.packet_counts["duplicate_updates"]))
+    table.add_row("Blocked updates", str(bundle.packet_counts["blocked_updates"]))
+    table.add_row("Evidence gaps", str(bundle.packet_counts["evidence_gaps"]))
+    table.add_row("Unsafe / rejected items", str(bundle.packet_counts["unsafe_or_rejected_items"]))
+    table.add_row("Overclaim risks", str(bundle.packet_counts["overclaim_risks"]))
+    table.add_row("Included artifacts", str(len(bundle.included_artifacts)))
+    table.add_row("Human approval required", "true")
+    table.add_row("State mutation", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    if bundle.human_review_checklist:
+        console.print("[bold yellow]Human review checklist:[/bold yellow]")
+        for item in bundle.human_review_checklist:
+            console.print(f"- [ ] {item}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved reviewed apply packet export bundle Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(bundle_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved reviewed apply packet export bundle JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only builds a local export bundle manifest. "
         "It does not write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
     )
 
