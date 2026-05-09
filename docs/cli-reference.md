@@ -782,3 +782,41 @@ Safety properties:
 - no browser execution
 - no curl or Kali execution
 - no automatic vulnerability confirmation
+
+## case-chat-reviewed-apply-packet-export-bundle
+
+Build a local export bundle manifest from a reviewed apply packet.
+
+Example:
+
+    blackhole case-chat-reviewed-apply-packet-export-bundle \
+      --reviewed-apply-packet /tmp/reviewed-apply-packet.json \
+      --artifact /tmp/reviewed-apply-packet.md \
+      --artifact-role packet-markdown \
+      --output /tmp/export-bundle.md \
+      --json-output /tmp/export-bundle.json
+
+The command reads a reviewed apply packet and produces a planning-only export bundle manifest. It summarizes:
+
+- reviewed apply packet recommendation
+- approved planning-note update counts
+- duplicate update counts
+- blocked update counts
+- evidence-gap counts
+- unsafe / rejected item counts
+- overclaim-risk counts
+- included artifact references
+- human review checklist
+- report guardrails
+- safety metadata
+
+Safety properties:
+
+- no state mutation
+- no case memory write
+- no research state write
+- no provider execution
+- no LLM provider calls
+- no browser execution
+- no curl or Kali execution
+- no automatic vulnerability confirmation

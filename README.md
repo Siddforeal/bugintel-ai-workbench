@@ -8,7 +8,7 @@ It is not a scanner.
 
 The long-term goal is to become a world-class AI-assisted security research system that can reason over structured case memory, prioritize attack surfaces, plan validation safely, and help researchers produce high-quality evidence and reports.
 
-Current version: 0.63.0
+Current version: 0.64.0
 
 ## Status
 
@@ -214,3 +214,22 @@ The packet separates:
 - safety metadata
 
 This remains non-mutating and local-only. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.
+
+## v0.64.0 - Reviewed Apply Packet Export Bundle
+
+Blackhole can now build a local export bundle manifest from a reviewed apply packet.
+
+The new `case-chat-reviewed-apply-packet-export-bundle` command reads a v0.63.0 reviewed apply packet JSON and produces a planning-only bundle summary for human review.
+
+The bundle includes:
+
+- reviewed apply packet summary
+- bundle manifest
+- included artifact references
+- approved / blocked / evidence-gap counts
+- unsafe and overclaim counts
+- human review checklist
+- report guardrails
+- safety metadata
+
+This remains local-only and non-mutating. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.

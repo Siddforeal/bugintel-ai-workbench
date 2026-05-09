@@ -1634,3 +1634,11 @@ After reviewing an action plan apply preview, Blackhole can create a final human
 The packet separates approved planning notes from duplicates, blocked items, evidence gaps, unsafe or rejected suggestions, and report overclaim risks. It also includes a human approval checklist.
 
 This protects the workflow from treating provider-derived planning text as proof or as an approved state mutation.
+
+## Reviewed Apply Packet Export Bundles
+
+After creating a reviewed apply packet, Blackhole can build a local export bundle manifest.
+
+The bundle summarizes the packet, references local artifacts, records section counts, preserves human review checklist items, and carries safety metadata. It is designed for review and evidence organization only.
+
+This protects the workflow from treating a packaged bundle as proof, execution approval, or a state mutation.
