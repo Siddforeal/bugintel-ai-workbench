@@ -855,3 +855,40 @@ Safety properties:
 - no browser execution
 - no curl or Kali execution
 - no automatic vulnerability confirmation
+
+## case-chat-export-bundle-report-readiness-review
+
+Review whether a gated export bundle is ready to support a human-written report draft.
+
+Example:
+
+    blackhole case-chat-export-bundle-report-readiness-review \
+      --review-gate /tmp/export-bundle-review-gate.json \
+      --output /tmp/report-readiness.md \
+      --json-output /tmp/report-readiness.json
+
+The command reads an export bundle review gate and produces a planning-only report-readiness review. It separates:
+
+- report-ready support notes
+- report blockers
+- missing evidence
+- unsafe or rejected items
+- artifact problems
+- report overclaim risks
+- safety blockers
+- final report-readiness checklist
+- report guardrails
+- safety metadata
+
+Safety properties:
+
+- no report generation
+- no report submission
+- no state mutation
+- no case memory write
+- no research state write
+- no provider execution
+- no LLM provider calls
+- no browser execution
+- no curl or Kali execution
+- no automatic vulnerability confirmation

@@ -1650,3 +1650,11 @@ After creating a reviewed apply packet export bundle, Blackhole can review the b
 The gate checks artifact presence, artifact integrity, unsafe counts, blocked counts, evidence-gap counts, overclaim risks, and safety metadata. It classifies the bundle as review-only and keeps human approval required.
 
 This protects the workflow from treating a bundle as report-ready proof or as approval for state mutation.
+
+## Export Bundle Report Readiness Reviews
+
+After an export bundle passes through the review gate, Blackhole can review whether the bundle is ready to support human report drafting.
+
+The readiness review separates report-supporting notes from artifact problems, unsafe items, missing evidence, report overclaim risks, and safety blockers. It keeps final report preparation human-led and evidence-based.
+
+This protects the workflow from treating bundle metadata as proof or from drafting/submitting reports without verified local evidence.
