@@ -892,3 +892,39 @@ Safety properties:
 - no browser execution
 - no curl or Kali execution
 - no automatic vulnerability confirmation
+
+## case-chat-report-readiness-finding-draft-packet
+
+Build a safe human finding-draft packet from report-readiness review JSON.
+
+Example:
+
+    blackhole case-chat-report-readiness-finding-draft-packet \
+      --report-readiness /tmp/report-readiness.json \
+      --output /tmp/finding-draft-packet.md \
+      --json-output /tmp/finding-draft-packet.json
+
+The command reads an export bundle report-readiness review and produces a planning-only packet for human report writing. It prepares:
+
+- title candidates
+- evidence checklist
+- reproduction-plan placeholders
+- impact wording guardrails
+- severity wording guardrails
+- blocked claims
+- do-not-claim-yet items
+- final human writing checklist
+- safety metadata
+
+Safety properties:
+
+- no report generation
+- no report submission
+- no state mutation
+- no case memory write
+- no research state write
+- no provider execution
+- no LLM provider calls
+- no browser execution
+- no curl or Kali execution
+- no automatic vulnerability confirmation

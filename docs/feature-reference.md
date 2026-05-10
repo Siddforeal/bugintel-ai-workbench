@@ -4,7 +4,7 @@
 
 Blackhole AI Workbench is a human-in-the-loop security research workbench for authorized vulnerability discovery, endpoint intelligence, response analysis, and structured evidence collection.
 
-Current version: 0.66.0
+Current version: 0.67.0
 
 ## Research Goal
 
@@ -1054,5 +1054,29 @@ It extends the case-chat provider workflow:
     → case-chat-export-bundle-report-readiness-review
 
 The output separates report-supporting notes from blockers, missing evidence, unsafe or rejected items, artifact problems, overclaim risks, safety blockers, final checklist items, and report guardrails.
+
+This feature is intentionally non-mutating. It does not generate reports, submit reports, write state, execute tools, call providers, or confirm vulnerabilities.
+
+## v0.67.0 - Report Readiness Finding Draft Packet
+
+The report readiness finding draft packet converts a v0.66.0 report-readiness review into safe structured support for human report writing.
+
+It extends the case-chat provider workflow:
+
+    case-chat-prompt-package
+    → case-chat-provider-gate
+    → case-chat-provider-dry-run
+    → case-chat-provider-result-import
+    → case-chat-provider-result-review
+    → case-chat-suggestion-action-plan
+    → case-chat-action-plan-apply-preview
+    → case-chat-action-plan-apply-preview-review
+    → case-chat-reviewed-apply-packet
+    → case-chat-reviewed-apply-packet-export-bundle
+    → case-chat-export-bundle-review-gate
+    → case-chat-export-bundle-report-readiness-review
+    → case-chat-report-readiness-finding-draft-packet
+
+The output prepares title candidates, evidence checklist items, reproduction placeholders, impact and severity guardrails, blocked claims, do-not-claim-yet items, final human writing checklist items, and safety metadata.
 
 This feature is intentionally non-mutating. It does not generate reports, submit reports, write state, execute tools, call providers, or confirm vulnerabilities.

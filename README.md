@@ -10,7 +10,7 @@ It is **not a scanner** and it is **not an auto-exploitation tool**.
 
 Blackhole is built around safe planning, local evidence, explicit human approval, and conservative report-readiness gates.
 
-**Current release:** `v0.66.0`
+**Current release:** `v0.67.0`
 **Project status:** active research prototype
 
 ---
@@ -184,6 +184,7 @@ This produces a planning-only readiness review. It does not generate a report, s
 
 | Version | Focus |
 |---|---|
+| `v0.67.0` | Report Readiness Finding Draft Packet |
 | `v0.66.0` | Export Bundle Report Readiness Review |
 | `v0.65.0` | Export Bundle Review Gate |
 | `v0.64.0` | Reviewed Apply Packet Export Bundle |
@@ -206,3 +207,23 @@ Do not use it for unauthorized scanning, exploitation, credential theft, persist
 ## License
 
 MIT License.
+
+## v0.67.0 - Report Readiness Finding Draft Packet
+
+Blackhole can now convert a report-readiness review into a safe human finding-draft packet.
+
+The new `case-chat-report-readiness-finding-draft-packet` command reads a v0.66.0 report-readiness review JSON and prepares structured writing support for a human researcher.
+
+The packet prepares:
+
+- title candidates
+- evidence checklist
+- reproduction-plan placeholders
+- impact wording guardrails
+- severity wording guardrails
+- blocked claims
+- do-not-claim-yet items
+- final human writing checklist
+- safety metadata
+
+This remains local-only and non-mutating. It does not generate reports, submit reports, write case memory, write research state, call LLM providers, execute tools, or confirm vulnerabilities automatically.

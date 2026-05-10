@@ -1658,3 +1658,11 @@ After an export bundle passes through the review gate, Blackhole can review whet
 The readiness review separates report-supporting notes from artifact problems, unsafe items, missing evidence, report overclaim risks, and safety blockers. It keeps final report preparation human-led and evidence-based.
 
 This protects the workflow from treating bundle metadata as proof or from drafting/submitting reports without verified local evidence.
+
+## Report Readiness Finding Draft Packets
+
+After a report-readiness review, Blackhole can build a safe finding-draft packet for human writing.
+
+The packet prepares title candidates, evidence checklist items, reproduction placeholders, impact and severity wording guardrails, blocked claims, do-not-claim-yet items, and a final human writing checklist.
+
+This protects the workflow from turning readiness metadata into an automatically generated report or unsupported vulnerability claim.
