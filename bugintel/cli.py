@@ -71,6 +71,7 @@ from bugintel.core.result_evidence_action_plan_apply_preview_review import build
 from bugintel.core.result_evidence_reviewed_apply_packet import build_reviewed_apply_packet
 from bugintel.core.result_evidence_reviewed_apply_packet_export_bundle import (build_bundle_artifact_from_path, build_reviewed_apply_packet_export_bundle)
 from bugintel.core.result_evidence_export_bundle_review_gate import build_export_bundle_review_gate
+from bugintel.core.result_evidence_export_bundle_report_readiness import build_export_bundle_report_readiness_review
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -3613,6 +3614,73 @@ def case_chat_export_bundle_review_gate_command(
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only reviews a local export bundle. "
         "It does not write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-export-bundle-report-readiness-review")
+def case_chat_export_bundle_report_readiness_review_command(
+    review_gate_file: Path = typer.Option(..., "--review-gate", help="Path to export bundle review gate JSON."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Review whether a gated export bundle can support a human-written report."""
+    if not review_gate_file.exists():
+        console.print(f"[bold red]Export bundle review gate JSON not found:[/bold red] {review_gate_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        review_gate = json.loads(review_gate_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid export bundle review gate JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(review_gate, dict):
+        console.print("[bold red]Export bundle review gate JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        readiness = build_export_bundle_report_readiness_review(review_gate)
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid export bundle report readiness input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    readiness_data = readiness.to_dict()
+    markdown = readiness.to_markdown()
+
+    table = Table(title="Export Bundle Report Readiness Review")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Review gate", str(review_gate_file))
+    table.add_row("Recommendation", readiness.recommendation)
+    table.add_row("Report support notes", str(len(readiness.report_ready_support_notes)))
+    table.add_row("Report blockers", str(len(readiness.report_blockers)))
+    table.add_row("Missing evidence", str(len(readiness.missing_evidence)))
+    table.add_row("Unsafe / rejected items", str(len(readiness.unsafe_or_rejected_items)))
+    table.add_row("Artifact problems", str(len(readiness.artifact_problems)))
+    table.add_row("Overclaim risks", str(len(readiness.overclaim_risks)))
+    table.add_row("Safety blockers", str(len(readiness.safety_blockers)))
+    table.add_row("Report generation", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    if readiness.final_report_readiness_checklist:
+        console.print("[bold yellow]Final report-readiness checklist:[/bold yellow]")
+        for item in readiness.final_report_readiness_checklist:
+            console.print(f"- [ ] {item}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved export bundle report readiness Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(readiness_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved export bundle report readiness JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only reviews report readiness. "
+        "It does not generate reports, write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
     )
 
 
