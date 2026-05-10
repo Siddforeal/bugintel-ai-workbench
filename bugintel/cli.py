@@ -72,6 +72,7 @@ from bugintel.core.result_evidence_reviewed_apply_packet import build_reviewed_a
 from bugintel.core.result_evidence_reviewed_apply_packet_export_bundle import (build_bundle_artifact_from_path, build_reviewed_apply_packet_export_bundle)
 from bugintel.core.result_evidence_export_bundle_review_gate import build_export_bundle_review_gate
 from bugintel.core.result_evidence_export_bundle_report_readiness import build_export_bundle_report_readiness_review
+from bugintel.core.result_evidence_report_readiness_finding_draft_packet import build_report_readiness_finding_draft_packet
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -3681,6 +3682,73 @@ def case_chat_export_bundle_report_readiness_review_command(
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only reviews report readiness. "
         "It does not generate reports, write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-report-readiness-finding-draft-packet")
+def case_chat_report_readiness_finding_draft_packet_command(
+    report_readiness_file: Path = typer.Option(..., "--report-readiness", help="Path to export bundle report readiness JSON."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Build a safe human report-draft packet from report-readiness review JSON."""
+    if not report_readiness_file.exists():
+        console.print(f"[bold red]Export bundle report readiness JSON not found:[/bold red] {report_readiness_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        report_readiness = json.loads(report_readiness_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid export bundle report readiness JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(report_readiness, dict):
+        console.print("[bold red]Export bundle report readiness JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        packet = build_report_readiness_finding_draft_packet(report_readiness)
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid report readiness finding draft packet input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    packet_data = packet.to_dict()
+    markdown = packet.to_markdown()
+
+    table = Table(title="Report Readiness Finding Draft Packet")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Report readiness", str(report_readiness_file))
+    table.add_row("Recommendation", packet.recommendation)
+    table.add_row("Title candidates", str(len(packet.title_candidates)))
+    table.add_row("Evidence checklist", str(len(packet.evidence_checklist)))
+    table.add_row("Reproduction placeholders", str(len(packet.reproduction_plan_placeholders)))
+    table.add_row("Impact guardrails", str(len(packet.impact_wording_guardrails)))
+    table.add_row("Severity guardrails", str(len(packet.severity_wording_guardrails)))
+    table.add_row("Blocked claims", str(len(packet.blocked_claims)))
+    table.add_row("Do-not-claim-yet items", str(len(packet.do_not_claim_yet)))
+    table.add_row("Report generation", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    if packet.final_human_writing_checklist:
+        console.print("[bold yellow]Final human writing checklist:[/bold yellow]")
+        for item in packet.final_human_writing_checklist:
+            console.print(f"- [ ] {item}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved report readiness finding draft packet Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(packet_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved report readiness finding draft packet JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only builds a report-draft packet for human writing. "
+        "It does not generate reports, submit reports, write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
     )
 
 
