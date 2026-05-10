@@ -8,7 +8,7 @@ It is not a scanner.
 
 The long-term goal is to become a world-class AI-assisted security research system that can reason over structured case memory, prioritize attack surfaces, plan validation safely, and help researchers produce high-quality evidence and reports.
 
-Current version: 0.64.0
+Current version: 0.65.0
 
 ## Status
 
@@ -231,5 +231,27 @@ The bundle includes:
 - human review checklist
 - report guardrails
 - safety metadata
+
+This remains local-only and non-mutating. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.
+
+## v0.65.0 - Export Bundle Review Gate
+
+Blackhole can now review a local export bundle before it is used in a report or future workflow.
+
+The new `case-chat-export-bundle-review-gate` command reads a v0.64.0 reviewed apply packet export bundle JSON and checks whether it is safe only as a review package.
+
+The review gate flags:
+
+- missing artifact files
+- artifact hash or size problems
+- duplicate artifact references
+- unsafe or rejected item counts
+- blocked update counts
+- evidence-gap counts
+- report overclaim counts
+- safety metadata problems
+- approved review notes
+- human review checklist
+- report guardrails
 
 This remains local-only and non-mutating. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.

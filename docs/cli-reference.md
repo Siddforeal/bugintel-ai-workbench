@@ -820,3 +820,38 @@ Safety properties:
 - no browser execution
 - no curl or Kali execution
 - no automatic vulnerability confirmation
+
+## case-chat-export-bundle-review-gate
+
+Review a local export bundle before report or future workflow use.
+
+Example:
+
+    blackhole case-chat-export-bundle-review-gate \
+      --export-bundle /tmp/export-bundle.json \
+      --output /tmp/export-bundle-review-gate.md \
+      --json-output /tmp/export-bundle-review-gate.json
+
+The command reads a reviewed apply packet export bundle and produces a planning-only review gate. It flags:
+
+- missing artifacts
+- artifact integrity issues
+- unsafe or rejected item counts
+- blocked update counts
+- evidence-gap counts
+- report overclaim counts
+- safety metadata problems
+- approved review notes
+- human review checklist
+- report guardrails
+
+Safety properties:
+
+- no state mutation
+- no case memory write
+- no research state write
+- no provider execution
+- no LLM provider calls
+- no browser execution
+- no curl or Kali execution
+- no automatic vulnerability confirmation
