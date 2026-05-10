@@ -1,278 +1,208 @@
 # Blackhole AI Workbench
 
 [![Tests](https://github.com/Siddforeal/Blackhole_AI/actions/workflows/tests.yml/badge.svg)](https://github.com/Siddforeal/Blackhole_AI/actions/workflows/tests.yml)
+[![Latest release](https://img.shields.io/github/v/release/Siddforeal/Blackhole_AI?label=release)](https://github.com/Siddforeal/Blackhole_AI/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Blackhole AI Workbench is a human-in-the-loop AI security research workbench for authorized vulnerability discovery, bug bounty research, endpoint intelligence, evidence planning, and report preparation.
+**Blackhole AI Workbench** is a human-in-the-loop security research workbench for authorized vulnerability research, bug bounty workflows, endpoint intelligence, evidence planning, and report preparation.
 
-It is not a scanner.
+It is **not a scanner** and it is **not an auto-exploitation tool**.
 
-The long-term goal is to become a world-class AI-assisted security research system that can reason over structured case memory, prioritize attack surfaces, plan validation safely, and help researchers produce high-quality evidence and reports.
+Blackhole is built around safe planning, local evidence, explicit human approval, and conservative report-readiness gates.
 
-Current version: 0.66.0
+**Current release:** `v0.66.0`
+**Project status:** active research prototype
 
-## Status
+---
 
-Blackhole is an active research prototype.
+## Why Blackhole Exists
 
-Current execution model:
+Security research produces fragmented material: endpoints, HAR files, screenshots, API responses, notes, hypotheses, validation steps, evidence bundles, and report-readiness decisions.
 
-- planning-first
-- local-first
-- human-in-the-loop
-- scope-aware
-- provider execution disabled by default
-- no automatic exploitation
-- no automatic browser, curl, or Kali execution
+Blackhole turns that material into a structured workflow:
 
-## What Blackhole Does
+```text
+inputs
+→ endpoint intelligence
+→ research state / case memory
+→ deterministic planning
+→ provider-gated review
+→ evidence/action review gates
+→ report-readiness review
+→ human-written report support
+```
 
-Blackhole turns endpoint and evidence inputs into a structured research workflow:
+The goal is to help a researcher think clearly, prioritize high-signal paths, preserve evidence, avoid overclaims, and produce stronger human-reviewed reports.
 
-    endpoints
-    → orchestration
-    → research-state
-    → ai-brain
-    → brain-prompt
-    → brain-review
-    → brain-decision
-    → brain-approval
-    → tool-request-manifest
-    → tool-execution-gate
-    → brain-chat
-    → research-state-update
-    → research-state-apply
-    → case-timeline
-    → case-summary
+---
 
-## Current Capabilities
+## Core Principles
 
-- Endpoint mining and orchestration
-- Endpoint investigation profiles
-- Endpoint priority scoring
-- Attack-surface grouping
-- Evidence requirement planning
-- Evidence workspace generation
-- Validation runbooks
-- Report draft generation
-- Research state / case memory
-- Deterministic AI brain planning
-- Provider-ready prompt packages without provider calls
-- Brain review and decision gates
-- Human approval packets
-- Tool request manifests
-- Tool execution gates
-- Deterministic brain-chat from saved state
-- Brain-chat session memory
-- Research-state update and patch planning
-- Case timeline and case summary generation
+- Authorized research only
+- Local-first by default
+- Planning-first, not execution-first
+- Human approval before risky actions
+- Provider output is untrusted until reviewed
+- No automatic vulnerability confirmation
+- No automatic report submission
+- No target mutation by default
+- Evidence before severity or impact claims
 
-## Quick Demo
+---
 
-Create an endpoint list:
+## Current Safety Model
 
-    cat > /tmp/blackhole-endpoints.txt <<'EOF2'
-    /api/accounts/123/users/{id}/permissions
-    /api/files/{id}/download
-    /api/status
-    EOF2
+Blackhole currently does **not** automatically:
 
-Run orchestration:
-
-    blackhole orchestrate /tmp/blackhole-endpoints.txt \
-      --target demo \
-      --json-output /tmp/orchestration.json
-
-Build research state:
-
-    blackhole research-state /tmp/orchestration.json \
-      --output-file /tmp/research-state.md \
-      --json-output /tmp/research-state.json
-
-Generate an AI brain plan:
-
-    blackhole ai-brain /tmp/research-state.json \
-      --output-file /tmp/ai-brain.md \
-      --json-output /tmp/ai-brain.json
-
-Ask the local deterministic brain:
-
-    blackhole brain-chat "hello" --state-dir /tmp/blackhole-safe-brain-demo
-
-## Safety Model
-
-Blackhole is designed for authorized security research only.
-
-It does not currently:
-
-- call LLM providers by default
-- execute curl automatically
-- launch browsers automatically
-- run Kali tools automatically
-- mutate real targets automatically
+- call LLM providers
+- execute curl commands
+- launch browsers
+- run Kali tools
+- mutate targets
 - bypass authorization
-- confirm vulnerabilities without evidence
+- confirm vulnerabilities
+- submit reports
 
-Every future execution layer should require explicit human approval, confirmed scope, controlled assets, redaction, and non-destructive validation.
+Every provider/tool/browser/execution-oriented workflow is represented as a reviewable plan, gate, packet, or checklist until a human explicitly validates the next step.
+
+---
+
+## Current Workflow Highlights
+
+### Endpoint and Evidence Planning
+
+Blackhole can organize endpoints and evidence into structured research artifacts:
+
+```text
+endpoint list
+→ orchestration
+→ research state
+→ endpoint priority
+→ attack surface groups
+→ validation runbooks
+→ evidence requirements
+```
+
+### Case Chat and Provider Review Pipeline
+
+Blackhole supports a safety-gated case-chat workflow that treats external or provider-generated text as untrusted planning input:
+
+```text
+case-chat-prompt-package
+→ case-chat-provider-gate
+→ case-chat-provider-dry-run
+→ case-chat-provider-result-import
+→ case-chat-provider-result-review
+→ case-chat-suggestion-action-plan
+→ case-chat-action-plan-apply-preview
+→ case-chat-action-plan-apply-preview-review
+→ case-chat-reviewed-apply-packet
+→ case-chat-reviewed-apply-packet-export-bundle
+→ case-chat-export-bundle-review-gate
+→ case-chat-export-bundle-report-readiness-review
+```
+
+### Report Readiness
+
+The current release can review whether a gated export bundle is ready to support a human-written report draft.
+
+It separates report-ready support notes, blockers, missing evidence, unsafe items, artifact problems, overclaim risks, safety blockers, final checklist items, and report guardrails.
+
+It still does **not** generate or submit reports automatically.
+
+---
+
+## Quick Start
+
+```bash
+git clone https://github.com/Siddforeal/Blackhole_AI.git
+cd Blackhole_AI
+
+python -m venv .venv
+source .venv/bin/activate
+
+pip install -e .
+blackhole --help
+```
+
+The legacy CLI name is also kept for compatibility:
+
+```bash
+bugintel --help
+```
+
+---
+
+## Minimal Demo
+
+```bash
+cat > /tmp/blackhole-endpoints.txt <<'EOF'
+/api/accounts/123/users/{id}/permissions
+/api/files/{id}/download
+/api/status
+EOF
+
+blackhole orchestrate /tmp/blackhole-endpoints.txt \
+  --target demo \
+  --json-output /tmp/orchestration.json
+
+blackhole research-state /tmp/orchestration.json \
+  --output-file /tmp/research-state.md \
+  --json-output /tmp/research-state.json
+```
+
+---
+
+## Example: Report-Readiness Review
+
+```bash
+blackhole case-chat-export-bundle-report-readiness-review \
+  --review-gate /tmp/export-bundle-review-gate.json \
+  --output /tmp/report-readiness.md \
+  --json-output /tmp/report-readiness.json
+```
+
+This produces a planning-only readiness review. It does not generate a report, submit a report, call providers, execute tools, or confirm a vulnerability.
+
+---
 
 ## Documentation
 
-Detailed documentation lives in `docs/`.
+| Document | Purpose |
+|---|---|
+| [CLI Reference](docs/cli-reference.md) | Commands and examples |
+| [Feature Reference](docs/feature-reference.md) | Full feature list |
+| [Methodology](docs/methodology.md) | Research workflow and methodology |
+| [Safety Model](docs/safety-model.md) | Safety guarantees and boundaries |
+| [Architecture](docs/architecture.md) | Internal design |
+| [Threat Model](docs/threat_model.md) | Misuse and risk analysis |
+| [Limitations](docs/limitations.md) | Current limitations |
 
-- [CLI Reference](docs/cli-reference.md)
-- [Safety Model](docs/safety-model.md)
-- [Architecture](docs/architecture.md)
-- [Methodology](docs/methodology.md)
-- [Threat Model](docs/threat_model.md)
-- [Limitations](docs/limitations.md)
-- [Full Feature Reference](docs/feature-reference.md)
+---
 
-## CLI Compatibility
+## Latest Release Line
 
-Both CLI names are supported:
+| Version | Focus |
+|---|---|
+| `v0.66.0` | Export Bundle Report Readiness Review |
+| `v0.65.0` | Export Bundle Review Gate |
+| `v0.64.0` | Reviewed Apply Packet Export Bundle |
+| `v0.63.0` | Case Chat Reviewed Apply Packet |
+| `v0.62.0` | Case Chat Apply Preview Reviewer |
+| `v0.61.0` | Case Chat Action Plan Apply Preview |
+| `v0.60.0` | Case Chat Suggestion Action Plan |
+| `v0.59.0` | Provider Suggestion Review Bridge |
 
-    blackhole version
-    bugintel version
+---
 
 ## Ethical Use
 
-Use Blackhole only for systems you own or are explicitly authorized to test.
+Use Blackhole only on systems you own, local labs, CTFs, written-scope penetration tests, or explicitly authorized bug bounty programs.
 
-Do not use it for unauthorized exploitation, credential theft, persistence, destructive testing, or accessing private data.
+Do not use it for unauthorized scanning, exploitation, credential theft, persistence, stealth, denial-of-service activity, destructive testing, or accessing private data.
+
+---
 
 ## License
 
 MIT License.
-
-## v0.60.0 - Case Chat Suggestion Action Plan
-
-Blackhole can now convert a reviewed provider suggestion into a safe, local-only manual action plan.
-
-The workflow is:
-
-1. Build a case-chat prompt package.
-2. Gate and dry-run provider use.
-3. Import manually saved provider output as an untrusted suggestion.
-4. Review the suggestion against local evidence.
-5. Convert the reviewed suggestion into a manual action plan.
-
-The new `case-chat-suggestion-action-plan` command separates approved planning actions, actions needing more local evidence, rejected or unsafe actions, missing evidence, report guardrails, and safety metadata.
-
-This remains local-only and safety-gated. Blackhole does not execute provider suggestions, does not call LLM providers, does not run tools, and does not confirm vulnerabilities automatically.
-
-## v0.61.0 - Case Chat Action Plan Apply Preview
-
-Blackhole can now turn a reviewed provider suggestion action plan into a safe local apply preview.
-
-The new `case-chat-action-plan-apply-preview` command reads the v0.60.0 suggestion action plan JSON and previews what could later be added to local case memory or research state.
-
-The preview separates:
-
-- case memory update candidates
-- research state update candidates
-- blocked updates
-- missing evidence
-- report guardrails
-- safety metadata
-
-This is preview-only. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.
-
-## v0.62.0 - Case Chat Apply Preview Reviewer
-
-Blackhole can now review a case-chat action plan apply preview before any future state-write command exists.
-
-The new `case-chat-action-plan-apply-preview-review` command reads a v0.61.0 apply preview JSON and checks whether the preview is safe to keep as a planning note.
-
-The review flags:
-
-- duplicate update candidates
-- blocked actions
-- missing evidence
-- unsafe or rejected update risks
-- report overclaim risks
-- safe planning notes
-- report guardrails
-- safety metadata
-
-This is still review-only and local-only. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.
-
-## v0.63.0 - Case Chat Reviewed Apply Packet
-
-Blackhole can now convert an apply-preview review into a final human approval packet.
-
-The new `case-chat-reviewed-apply-packet` command reads a v0.62.0 apply-preview review JSON and creates a planning-only packet for human approval.
-
-The packet separates:
-
-- approved planning-note updates
-- duplicate updates
-- blocked updates
-- evidence gaps
-- unsafe or rejected items
-- report overclaim risks
-- report guardrails
-- human approval checklist
-- safety metadata
-
-This remains non-mutating and local-only. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.
-
-## v0.64.0 - Reviewed Apply Packet Export Bundle
-
-Blackhole can now build a local export bundle manifest from a reviewed apply packet.
-
-The new `case-chat-reviewed-apply-packet-export-bundle` command reads a v0.63.0 reviewed apply packet JSON and produces a planning-only bundle summary for human review.
-
-The bundle includes:
-
-- reviewed apply packet summary
-- bundle manifest
-- included artifact references
-- approved / blocked / evidence-gap counts
-- unsafe and overclaim counts
-- human review checklist
-- report guardrails
-- safety metadata
-
-This remains local-only and non-mutating. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.
-
-## v0.65.0 - Export Bundle Review Gate
-
-Blackhole can now review a local export bundle before it is used in a report or future workflow.
-
-The new `case-chat-export-bundle-review-gate` command reads a v0.64.0 reviewed apply packet export bundle JSON and checks whether it is safe only as a review package.
-
-The review gate flags:
-
-- missing artifact files
-- artifact hash or size problems
-- duplicate artifact references
-- unsafe or rejected item counts
-- blocked update counts
-- evidence-gap counts
-- report overclaim counts
-- safety metadata problems
-- approved review notes
-- human review checklist
-- report guardrails
-
-This remains local-only and non-mutating. It does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.
-
-## v0.66.0 - Export Bundle Report Readiness Review
-
-Blackhole can now review an export bundle review gate and decide whether it is ready to support a human-written report draft.
-
-The new `case-chat-export-bundle-report-readiness-review` command reads a v0.65.0 export bundle review gate JSON and separates report-supporting material from blockers.
-
-The review separates:
-
-- report-ready support notes
-- report blockers
-- missing evidence
-- unsafe or rejected items
-- artifact problems
-- report overclaim risks
-- safety blockers
-- final report-readiness checklist
-- report guardrails
-- safety metadata
-
-This remains local-only and non-mutating. It does not generate reports, does not submit reports, does not write case memory, does not write research state, does not execute tools, does not call LLM providers, and does not confirm vulnerabilities automatically.
