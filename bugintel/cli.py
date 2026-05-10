@@ -73,6 +73,7 @@ from bugintel.core.result_evidence_reviewed_apply_packet_export_bundle import (b
 from bugintel.core.result_evidence_export_bundle_review_gate import build_export_bundle_review_gate
 from bugintel.core.result_evidence_export_bundle_report_readiness import build_export_bundle_report_readiness_review
 from bugintel.core.result_evidence_report_readiness_finding_draft_packet import build_report_readiness_finding_draft_packet
+from bugintel.core.result_evidence_finding_draft_packet_review_gate import build_finding_draft_packet_review_gate
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -3748,6 +3749,74 @@ def case_chat_report_readiness_finding_draft_packet_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only builds a report-draft packet for human writing. "
+        "It does not generate reports, submit reports, write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-finding-draft-packet-review-gate")
+def case_chat_finding_draft_packet_review_gate_command(
+    finding_draft_packet_file: Path = typer.Option(..., "--finding-draft-packet", help="Path to finding draft packet JSON."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Review a finding draft packet before human report writing."""
+    if not finding_draft_packet_file.exists():
+        console.print(f"[bold red]Finding draft packet JSON not found:[/bold red] {finding_draft_packet_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        finding_draft_packet = json.loads(finding_draft_packet_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid finding draft packet JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(finding_draft_packet, dict):
+        console.print("[bold red]Finding draft packet JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        review_gate = build_finding_draft_packet_review_gate(finding_draft_packet)
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid finding draft packet review gate input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    gate_data = review_gate.to_dict()
+    markdown = review_gate.to_markdown()
+
+    table = Table(title="Finding Draft Packet Review Gate")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Finding draft packet", str(finding_draft_packet_file))
+    table.add_row("Recommendation", review_gate.recommendation)
+    table.add_row("Title findings", str(len(review_gate.title_quality_findings)))
+    table.add_row("Evidence findings", str(len(review_gate.evidence_checklist_findings)))
+    table.add_row("Reproduction findings", str(len(review_gate.reproduction_gap_findings)))
+    table.add_row("Wording findings", str(len(review_gate.wording_guardrail_findings)))
+    table.add_row("Blocked claims", str(len(review_gate.blocked_claim_findings)))
+    table.add_row("Do-not-claim findings", str(len(review_gate.do_not_claim_findings)))
+    table.add_row("Safety findings", str(len(review_gate.safety_findings)))
+    table.add_row("Approved writing support", str(len(review_gate.approved_writing_support)))
+    table.add_row("Report generation", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    if review_gate.final_review_checklist:
+        console.print("[bold yellow]Final review checklist:[/bold yellow]")
+        for item in review_gate.final_review_checklist:
+            console.print(f"- [ ] {item}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved finding draft packet review gate Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(gate_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved finding draft packet review gate JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only reviews a finding draft packet for human writing. "
         "It does not generate reports, submit reports, write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
     )
 
