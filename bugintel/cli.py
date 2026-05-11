@@ -74,6 +74,7 @@ from bugintel.core.result_evidence_export_bundle_review_gate import build_export
 from bugintel.core.result_evidence_export_bundle_report_readiness import build_export_bundle_report_readiness_review
 from bugintel.core.result_evidence_report_readiness_finding_draft_packet import build_report_readiness_finding_draft_packet
 from bugintel.core.result_evidence_finding_draft_packet_review_gate import build_finding_draft_packet_review_gate
+from bugintel.core.result_evidence_human_report_skeleton_packet import build_human_report_skeleton_packet
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -3817,6 +3818,72 @@ def case_chat_finding_draft_packet_review_gate_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only reviews a finding draft packet for human writing. "
+        "It does not generate reports, submit reports, write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-human-report-skeleton-packet")
+def case_chat_human_report_skeleton_packet_command(
+    finding_draft_review_gate_file: Path = typer.Option(..., "--finding-draft-review-gate", help="Path to finding draft packet review gate JSON."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Build a safe human report skeleton packet from a finding draft review gate."""
+    if not finding_draft_review_gate_file.exists():
+        console.print(f"[bold red]Finding draft packet review gate JSON not found:[/bold red] {finding_draft_review_gate_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        review_gate = json.loads(finding_draft_review_gate_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid finding draft packet review gate JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(review_gate, dict):
+        console.print("[bold red]Finding draft packet review gate JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        packet = build_human_report_skeleton_packet(review_gate)
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid human report skeleton packet input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    packet_data = packet.to_dict()
+    markdown = packet.to_markdown()
+
+    table = Table(title="Human Report Skeleton Packet")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Finding draft review gate", str(finding_draft_review_gate_file))
+    table.add_row("Recommendation", packet.recommendation)
+    table.add_row("Summary status", packet.summary.status)
+    table.add_row("Impact status", packet.impact.status)
+    table.add_row("Steps status", packet.steps_to_reproduce.status)
+    table.add_row("Evidence status", packet.evidence.status)
+    table.add_row("Severity status", packet.severity_rationale.status)
+    table.add_row("Blocked claims status", packet.blocked_claims_do_not_claim.status)
+    table.add_row("Final report generated", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    if packet.human_final_writing_checklist:
+        console.print("[bold yellow]Human final-writing checklist:[/bold yellow]")
+        for item in packet.human_final_writing_checklist:
+            console.print(f"- [ ] {item}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved human report skeleton packet Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(packet_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved human report skeleton packet JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only builds a report skeleton packet for human writing. "
         "It does not generate reports, submit reports, write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
     )
 
