@@ -4,7 +4,7 @@
 
 Blackhole AI Workbench is a human-in-the-loop security research workbench for authorized vulnerability discovery, endpoint intelligence, response analysis, and structured evidence collection.
 
-Current version: 0.67.0
+Current version: 0.68.0
 
 ## Research Goal
 
@@ -1078,5 +1078,30 @@ It extends the case-chat provider workflow:
     → case-chat-report-readiness-finding-draft-packet
 
 The output prepares title candidates, evidence checklist items, reproduction placeholders, impact and severity guardrails, blocked claims, do-not-claim-yet items, final human writing checklist items, and safety metadata.
+
+This feature is intentionally non-mutating. It does not generate reports, submit reports, write state, execute tools, call providers, or confirm vulnerabilities.
+
+## v0.68.0 - Finding Draft Packet Review Gate
+
+The finding draft packet review gate checks a v0.67.0 finding draft packet before human report writing.
+
+It extends the case-chat provider workflow:
+
+    case-chat-prompt-package
+    → case-chat-provider-gate
+    → case-chat-provider-dry-run
+    → case-chat-provider-result-import
+    → case-chat-provider-result-review
+    → case-chat-suggestion-action-plan
+    → case-chat-action-plan-apply-preview
+    → case-chat-action-plan-apply-preview-review
+    → case-chat-reviewed-apply-packet
+    → case-chat-reviewed-apply-packet-export-bundle
+    → case-chat-export-bundle-review-gate
+    → case-chat-export-bundle-report-readiness-review
+    → case-chat-report-readiness-finding-draft-packet
+    → case-chat-finding-draft-packet-review-gate
+
+The output reviews title quality, evidence checklist completeness, reproduction placeholder gaps, wording guardrails, blocked claims, do-not-claim-yet items, safety metadata, and whether the packet is safe only as human writing support.
 
 This feature is intentionally non-mutating. It does not generate reports, submit reports, write state, execute tools, call providers, or confirm vulnerabilities.

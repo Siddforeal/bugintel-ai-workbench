@@ -928,3 +928,38 @@ Safety properties:
 - no browser execution
 - no curl or Kali execution
 - no automatic vulnerability confirmation
+
+## case-chat-finding-draft-packet-review-gate
+
+Review a finding draft packet before human report writing.
+
+Example:
+
+    blackhole case-chat-finding-draft-packet-review-gate \
+      --finding-draft-packet /tmp/finding-draft-packet.json \
+      --output /tmp/finding-draft-packet-review.md \
+      --json-output /tmp/finding-draft-packet-review.json
+
+The command checks:
+
+- title candidate quality
+- evidence checklist completeness
+- reproduction placeholder gaps
+- impact and severity overclaim risk
+- blocked claims
+- do-not-claim-yet items
+- safety metadata
+- whether the packet is safe only as human writing support
+
+Safety properties:
+
+- no report generation
+- no report submission
+- no state mutation
+- no case memory write
+- no research state write
+- no provider execution
+- no LLM provider calls
+- no browser execution
+- no curl or Kali execution
+- no automatic vulnerability confirmation

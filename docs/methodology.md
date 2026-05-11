@@ -1666,3 +1666,11 @@ After a report-readiness review, Blackhole can build a safe finding-draft packet
 The packet prepares title candidates, evidence checklist items, reproduction placeholders, impact and severity wording guardrails, blocked claims, do-not-claim-yet items, and a final human writing checklist.
 
 This protects the workflow from turning readiness metadata into an automatically generated report or unsupported vulnerability claim.
+
+## Finding Draft Packet Review Gates
+
+After a report-readiness finding draft packet is built, Blackhole can review it before human report writing.
+
+The review gate checks title candidates, evidence checklist items, reproduction placeholders, impact and severity guardrails, blocked claims, do-not-claim-yet items, and safety metadata.
+
+This protects the workflow from treating a draft packet as a generated report or as confirmed vulnerability evidence.
