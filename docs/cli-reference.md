@@ -963,3 +963,39 @@ Safety properties:
 - no browser execution
 - no curl or Kali execution
 - no automatic vulnerability confirmation
+
+## case-chat-human-report-skeleton-packet
+
+Build a safe human report skeleton packet from a finding draft packet review gate.
+
+Example:
+
+    blackhole case-chat-human-report-skeleton-packet \
+      --finding-draft-review-gate /tmp/finding-draft-packet-review-gate.json \
+      --output /tmp/human-report-skeleton.md \
+      --json-output /tmp/human-report-skeleton.json
+
+The command prepares section placeholders only:
+
+- Summary
+- Impact
+- Steps to Reproduce
+- Evidence
+- Affected Assets
+- Severity Rationale
+- Remediation
+- Blocked Claims / Do Not Claim
+- Human final-writing checklist
+
+Safety properties:
+
+- no final report generation
+- no report submission
+- no state mutation
+- no case memory write
+- no research state write
+- no provider execution
+- no LLM provider calls
+- no browser execution
+- no curl or Kali execution
+- no automatic vulnerability confirmation

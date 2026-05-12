@@ -1674,3 +1674,11 @@ After a report-readiness finding draft packet is built, Blackhole can review it 
 The review gate checks title candidates, evidence checklist items, reproduction placeholders, impact and severity guardrails, blocked claims, do-not-claim-yet items, and safety metadata.
 
 This protects the workflow from treating a draft packet as a generated report or as confirmed vulnerability evidence.
+
+## Human Report Skeleton Packets
+
+After a finding draft packet review gate, Blackhole can build a safe report skeleton packet for human writing.
+
+The skeleton prepares section placeholders for Summary, Impact, Steps to Reproduce, Evidence, Affected Assets, Severity Rationale, Remediation, Blocked Claims / Do Not Claim, and the final human writing checklist.
+
+This protects the workflow from treating report support material as a final generated report or confirmed vulnerability claim.
