@@ -999,3 +999,37 @@ Safety properties:
 - no browser execution
 - no curl or Kali execution
 - no automatic vulnerability confirmation
+
+## case-chat-human-report-skeleton-review-gate
+
+Review a human report skeleton packet before human report writing.
+
+Example:
+
+    blackhole case-chat-human-report-skeleton-review-gate \
+      --human-report-skeleton /tmp/human-report-skeleton.json \
+      --output /tmp/human-report-skeleton-review.md \
+      --json-output /tmp/human-report-skeleton-review.json
+
+The command checks:
+
+- section completeness
+- blocker leakage
+- evidence mapping gaps
+- unsupported impact/severity placeholders
+- blocked and do-not-claim items
+- safety metadata
+- whether the skeleton is safe only as a human-writing scaffold
+
+Safety properties:
+
+- no final report generation
+- no report submission
+- no state mutation
+- no case memory write
+- no research state write
+- no provider execution
+- no LLM provider calls
+- no browser execution
+- no curl or Kali execution
+- no automatic vulnerability confirmation

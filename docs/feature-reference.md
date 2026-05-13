@@ -4,7 +4,7 @@
 
 Blackhole AI Workbench is a human-in-the-loop security research workbench for authorized vulnerability discovery, endpoint intelligence, response analysis, and structured evidence collection.
 
-Current version: 0.69.0
+Current version: 0.70.0
 
 ## Research Goal
 
@@ -1129,5 +1129,32 @@ It extends the case-chat provider workflow:
     → case-chat-human-report-skeleton-packet
 
 The output prepares Summary, Impact, Steps to Reproduce, Evidence, Affected Assets, Severity Rationale, Remediation, Blocked Claims / Do Not Claim, and Human final-writing checklist sections.
+
+This feature is intentionally non-mutating. It does not generate final reports, submit reports, write state, execute tools, call providers, or confirm vulnerabilities.
+
+## v0.70.0 - Human Report Skeleton Review Gate
+
+The human report skeleton review gate checks a v0.69.0 human report skeleton packet before a human turns it into a report.
+
+It extends the case-chat provider workflow:
+
+    case-chat-prompt-package
+    → case-chat-provider-gate
+    → case-chat-provider-dry-run
+    → case-chat-provider-result-import
+    → case-chat-provider-result-review
+    → case-chat-suggestion-action-plan
+    → case-chat-action-plan-apply-preview
+    → case-chat-action-plan-apply-preview-review
+    → case-chat-reviewed-apply-packet
+    → case-chat-reviewed-apply-packet-export-bundle
+    → case-chat-export-bundle-review-gate
+    → case-chat-export-bundle-report-readiness-review
+    → case-chat-report-readiness-finding-draft-packet
+    → case-chat-finding-draft-packet-review-gate
+    → case-chat-human-report-skeleton-packet
+    → case-chat-human-report-skeleton-review-gate
+
+The output reviews section completeness, blocker leakage, evidence mapping gaps, impact and severity risk, blocked/do-not-claim items, safety metadata, and whether the skeleton is safe only as human writing support.
 
 This feature is intentionally non-mutating. It does not generate final reports, submit reports, write state, execute tools, call providers, or confirm vulnerabilities.
