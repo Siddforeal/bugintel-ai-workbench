@@ -1690,3 +1690,9 @@ After a human report skeleton packet is built, Blackhole can review it before hu
 The review gate checks section completeness, blocker leakage, evidence mapping gaps, impact/severity placeholders, blocked/do-not-claim items, and safety metadata.
 
 This protects the workflow from treating a report skeleton as a final generated report or confirmed vulnerability claim.
+
+## Brain Chat Question Routing
+
+`brain-chat` can route common natural questions to deterministic local answers from the generated brain state.
+
+This makes the local assistant easier to use while preserving the safety model. It still answers only from local planning artifacts and does not call providers, execute tools, or confirm vulnerabilities.

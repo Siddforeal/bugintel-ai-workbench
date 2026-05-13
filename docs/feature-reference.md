@@ -4,7 +4,7 @@
 
 Blackhole AI Workbench is a human-in-the-loop security research workbench for authorized vulnerability discovery, endpoint intelligence, response analysis, and structured evidence collection.
 
-Current version: 0.70.0
+Current version: 0.71.0
 
 ## Research Goal
 
@@ -1158,3 +1158,22 @@ It extends the case-chat provider workflow:
 The output reviews section completeness, blocker leakage, evidence mapping gaps, impact and severity risk, blocked/do-not-claim items, safety metadata, and whether the skeleton is safe only as human writing support.
 
 This feature is intentionally non-mutating. It does not generate final reports, submit reports, write state, execute tools, call providers, or confirm vulnerabilities.
+
+## v0.71.0 - Brain Chat Question Router
+
+The brain chat question router makes `brain-chat` understand more natural phrasing while remaining deterministic and local-only.
+
+It routes questions such as:
+
+    What is blocking validation?
+    Why can't we test?
+    What approvals are missing?
+    What evidence do we need?
+    What endpoint should I start with?
+    Which endpoint is highest priority?
+    Can we execute?
+    Is this reportable?
+
+The router maps these questions to existing safe answer types: focus, blockers, approvals, evidence, execution, reportability, status, next steps, and help.
+
+This feature does not add provider calls, execution, network interaction, report generation, or vulnerability confirmation.

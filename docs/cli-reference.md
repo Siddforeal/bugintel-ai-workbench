@@ -1033,3 +1033,36 @@ Safety properties:
 - no browser execution
 - no curl or Kali execution
 - no automatic vulnerability confirmation
+
+## brain-chat question router
+
+`brain-chat` now routes more natural local questions to deterministic answer types.
+
+Examples:
+
+    blackhole brain-chat "What is blocking validation?" --state-dir /tmp/case/brain
+    blackhole brain-chat "What approvals are missing?" --state-dir /tmp/case/brain
+    blackhole brain-chat "What evidence do we need?" --state-dir /tmp/case/brain
+    blackhole brain-chat "Is this reportable?" --state-dir /tmp/case/brain
+    blackhole brain-chat "What should I test first?" --state-dir /tmp/case/brain
+
+Supported routed topics include:
+
+- focus endpoint / highest priority endpoint
+- validation blockers
+- missing approvals
+- evidence needs
+- execution safety
+- reportability status
+- general state/status
+- next safe steps
+
+Safety properties:
+
+- no LLM provider calls
+- no tool execution
+- no browser execution
+- no curl or Kali execution
+- no network interaction
+- no report submission
+- no automatic vulnerability confirmation

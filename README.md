@@ -10,7 +10,7 @@ It is **not a scanner** and it is **not an auto-exploitation tool**.
 
 Blackhole is built around safe planning, local evidence, explicit human approval, and conservative report-readiness gates.
 
-**Current release:** `v0.70.0`
+**Current release:** `v0.71.0`
 **Project status:** active research prototype
 
 ---
@@ -184,6 +184,7 @@ This produces a planning-only readiness review. It does not generate a report, s
 
 | Version | Focus |
 |---|---|
+| `v0.71.0` | Brain Chat Question Router |
 | `v0.70.0` | Human Report Skeleton Review Gate |
 | `v0.69.0` | Human Report Skeleton Packet |
 | `v0.68.0` | Finding Draft Packet Review Gate |
