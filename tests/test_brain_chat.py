@@ -73,3 +73,42 @@ def test_brain_chat_handles_missing_state(tmp_path):
     assert reply.target_name == "unknown-target"
     assert reply.focus_endpoint is None
     assert "Hello Sidd" in reply.answer
+
+
+def test_brain_chat_routes_blocking_validation_question(tmp_path):
+    _write_state(tmp_path)
+
+    reply = build_brain_chat_reply("What is blocking validation right now?", tmp_path)
+
+    assert "Validation is currently blocked" in reply.answer
+    assert "blocked-pending-scope-and-controls" in reply.answer
+    assert "blocked-pending-approval" in reply.answer
+
+
+def test_brain_chat_routes_approval_question(tmp_path):
+    _write_state(tmp_path)
+
+    reply = build_brain_chat_reply("What approvals are missing?", tmp_path)
+
+    assert "Approvals still required" in reply.answer
+    assert "scope" in reply.answer.lower()
+    assert "controlled" in reply.answer.lower()
+
+
+def test_brain_chat_routes_evidence_question(tmp_path):
+    _write_state(tmp_path)
+
+    reply = build_brain_chat_reply("What evidence do we need?", tmp_path)
+
+    assert "Useful evidence types" in reply.answer
+    assert "baseline request/response sample" in reply.answer
+    assert "authorization decision diff" in reply.answer
+
+
+def test_brain_chat_routes_reportability_question(tmp_path):
+    _write_state(tmp_path)
+
+    reply = build_brain_chat_reply("Is this reportable?", tmp_path)
+
+    assert "not reportable yet" in reply.answer.lower()
+    assert "No vulnerability is confirmed" in reply.answer

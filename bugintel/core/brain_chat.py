@@ -99,6 +99,43 @@ def _first_focus_item(brain: dict[str, Any]) -> dict[str, Any]:
     return {}
 
 
+
+def _route_question(q: str) -> str:
+    """Route natural brain-chat questions to deterministic local answer types."""
+    normalized = " ".join(q.replace("’", "'").split())
+
+    if normalized in {"hello", "hi", "hey", "yo"}:
+        return "hello"
+
+    if any(term in normalized for term in ("execute", "run", "curl", "browser", "kali", "shell", "send request")):
+        return "execute"
+
+    if any(term in normalized for term in ("reportable", "submit", "can we report", "ready to report", "valid finding")):
+        return "reportable"
+
+    if any(term in normalized for term in ("approval", "approve", "human approval", "missing approval")):
+        return "approvals"
+
+    if any(term in normalized for term in ("blocking", "blocked", "can't test", "cant test", "cannot test", "why can't", "why cant", "what is stopping", "validation blocked")):
+        return "blockers"
+
+    if any(term in normalized for term in ("evidence", "artifact", "proof", "what do we need", "need to collect")):
+        return "evidence"
+
+    if any(term in normalized for term in ("what should i test first", "test first", "start with", "highest priority", "which endpoint", "priority endpoint")):
+        return "focus"
+
+    if "why" in normalized or "focus" in normalized:
+        return "focus"
+
+    if "status" in normalized or "where" in normalized:
+        return "status"
+
+    if "next" in normalized or "what should we do" in normalized:
+        return "next"
+
+    return "help"
+
 def _answer_question(
     question: str,
     target_name: str,
@@ -109,12 +146,13 @@ def _answer_question(
     execution_allowed: bool,
 ) -> str:
     q = question.strip().lower()
+    route = _route_question(q)
     endpoint = str(focus.get("endpoint") or "none")
     band = str(focus.get("priority_band") or "unknown")
     score = str(focus.get("priority_score") or 0)
     reason = str(focus.get("reason") or "No focus reason is available.")
 
-    if q in {"hello", "hi", "hey", "yo"}:
+    if route == "hello":
         return "\n".join(
             [
                 "Hello Sidd. I am Blackhole AI Workbench.",
@@ -132,7 +170,7 @@ def _answer_question(
             ]
         )
 
-    if "status" in q or "where" in q:
+    if route == "status":
         return "\n".join(
             [
                 f"Target `{target_name}` is loaded.",
@@ -144,7 +182,7 @@ def _answer_question(
             ]
         )
 
-    if "next" in q or "do" in q:
+    if route == "next":
         return "\n".join(
             [
                 "Next safe step:",
@@ -157,7 +195,7 @@ def _answer_question(
             ]
         )
 
-    if "why" in q or "focus" in q:
+    if route == "focus":
         return "\n".join(
             [
                 f"Blackhole is focusing on `{endpoint}`.",
@@ -167,7 +205,64 @@ def _answer_question(
             ]
         )
 
-    if "execute" in q or "run" in q or "curl" in q or "browser" in q or "kali" in q:
+    if route == "blockers":
+        return "\n".join(
+            [
+                "Validation is currently blocked.",
+                f"Decision: `{decision}`.",
+                f"Approval status: `{approval_status}`.",
+                f"Execution gate: `{execution_gate}`.",
+                f"Execution allowed: `{execution_allowed}`.",
+                "",
+                "You need scope confirmation, controlled accounts/objects, human approval, redaction review, and non-destructive validation approval before active testing.",
+            ]
+        )
+
+    if route == "approvals":
+        return "\n".join(
+            [
+                "Approvals still required before validation:",
+                "",
+                "- Confirm program scope and authorization.",
+                "- Confirm controlled test accounts, tenants, projects, files, or objects.",
+                "- Approve evidence collection.",
+                "- Confirm redaction plan.",
+                "- Confirm non-destructive validation.",
+                "",
+                f"Current approval status: `{approval_status}`.",
+            ]
+        )
+
+    if route == "evidence":
+        return "\n".join(
+            [
+                f"For `{endpoint}`, collect evidence only after authorization and approval.",
+                "",
+                "Useful evidence types:",
+                "- scope and authorization proof",
+                "- baseline request/response sample",
+                "- redaction checklist",
+                "- controlled account / role / object matrix",
+                "- authorization decision diff",
+                "- identifier source map",
+                "- owned / foreign / random response matrix",
+                "",
+                "This is not evidence collection. It is only a planning checklist.",
+            ]
+        )
+
+    if route == "reportable":
+        return "\n".join(
+            [
+                "This is not reportable yet.",
+                f"Current decision: `{decision}`.",
+                f"Approval status: `{approval_status}`.",
+                "No vulnerability is confirmed from planning state alone.",
+                "A report needs local validation evidence, impact proof, redaction, and human review.",
+            ]
+        )
+
+    if route == "execute":
         return "\n".join(
             [
                 "Execution is not allowed from brain-chat.",
@@ -186,6 +281,10 @@ def _answer_question(
             "- status",
             "- what should we do next?",
             "- why this endpoint?",
+            "- what is blocking validation?",
+            "- what approvals are missing?",
+            "- what evidence do we need?",
             "- can we execute?",
+            "- is this reportable?",
         ]
     )
