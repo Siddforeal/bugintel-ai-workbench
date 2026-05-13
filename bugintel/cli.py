@@ -75,6 +75,7 @@ from bugintel.core.result_evidence_export_bundle_report_readiness import build_e
 from bugintel.core.result_evidence_report_readiness_finding_draft_packet import build_report_readiness_finding_draft_packet
 from bugintel.core.result_evidence_finding_draft_packet_review_gate import build_finding_draft_packet_review_gate
 from bugintel.core.result_evidence_human_report_skeleton_packet import build_human_report_skeleton_packet
+from bugintel.core.result_evidence_human_report_skeleton_review_gate import build_human_report_skeleton_review_gate
 from bugintel.core.result_evidence_chat_router import route_chat_context
 from bugintel.core.result_update_bridge import build_update_plan_from_interpretation
 from bugintel.core.result_flow import build_result_flow
@@ -3884,6 +3885,73 @@ def case_chat_human_report_skeleton_packet_command(
 
     console.print(
         "[bold yellow]Safety:[/bold yellow] This command only builds a report skeleton packet for human writing. "
+        "It does not generate reports, submit reports, write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
+    )
+
+
+@app.command("case-chat-human-report-skeleton-review-gate")
+def case_chat_human_report_skeleton_review_gate_command(
+    human_report_skeleton_file: Path = typer.Option(..., "--human-report-skeleton", help="Path to human report skeleton packet JSON."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Review a human report skeleton packet before report writing."""
+    if not human_report_skeleton_file.exists():
+        console.print(f"[bold red]Human report skeleton packet JSON not found:[/bold red] {human_report_skeleton_file}")
+        raise typer.Exit(code=1)
+
+    try:
+        human_report_skeleton = json.loads(human_report_skeleton_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[bold red]Invalid human report skeleton packet JSON:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    if not isinstance(human_report_skeleton, dict):
+        console.print("[bold red]Human report skeleton packet JSON must be an object.[/bold red]")
+        raise typer.Exit(code=2)
+
+    try:
+        review_gate = build_human_report_skeleton_review_gate(human_report_skeleton)
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid human report skeleton review gate input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    gate_data = review_gate.to_dict()
+    markdown = review_gate.to_markdown()
+
+    table = Table(title="Human Report Skeleton Review Gate")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Human report skeleton", str(human_report_skeleton_file))
+    table.add_row("Recommendation", review_gate.recommendation)
+    table.add_row("Section completeness findings", str(len(review_gate.section_completeness_findings)))
+    table.add_row("Blocker leakage findings", str(len(review_gate.blocker_leakage_findings)))
+    table.add_row("Evidence mapping findings", str(len(review_gate.evidence_mapping_findings)))
+    table.add_row("Impact/severity findings", str(len(review_gate.impact_severity_findings)))
+    table.add_row("Blocked/do-not-claim findings", str(len(review_gate.blocked_do_not_claim_findings)))
+    table.add_row("Safety findings", str(len(review_gate.safety_findings)))
+    table.add_row("Approved skeleton sections", str(len(review_gate.approved_skeleton_sections)))
+    table.add_row("Final report generated", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    if review_gate.final_review_checklist:
+        console.print("[bold yellow]Final review checklist:[/bold yellow]")
+        for item in review_gate.final_review_checklist:
+            console.print(f"- [ ] {item}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved human report skeleton review gate Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(gate_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved human report skeleton review gate JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only reviews a report skeleton packet for human writing. "
         "It does not generate reports, submit reports, write state, call LLM providers, execute tools, or confirm vulnerabilities automatically."
     )
 
