@@ -91,6 +91,7 @@ from bugintel.core.tool_request_manifest import build_tool_request_manifest, ren
 from bugintel.core.tool_execution_gate import build_tool_execution_gate, render_tool_execution_gate_markdown
 from bugintel.core.brain_chat import build_brain_chat_reply
 from bugintel.core.brain_state_export import build_brain_state_export
+from bugintel.core.brain_chat_demo_flow import run_brain_chat_demo_flow
 from bugintel.core.brain_chat_session import append_brain_chat_turn, load_brain_chat_session, save_brain_chat_session
 from bugintel.core.task_tree import build_endpoint_task_tree, render_tree
 from bugintel.core.research_planner import build_research_plan_from_browser_evidence, render_research_plan_markdown, ResearchPlan, ResearchHypothesis, ResearchRecommendation, EvidenceReference
@@ -454,6 +455,58 @@ def endpoint_investigation_command(
 
 
 
+
+
+@app.command("brain-chat-demo-flow")
+def brain_chat_demo_flow_command(
+    endpoints_file: Path = typer.Argument(..., help="Path to endpoints.txt for the demo case."),
+    target_name: str = typer.Option("demo.local", "--target", "-t", help="Target/workspace name."),
+    output_dir: Path = typer.Option(..., "--output-dir", help="Directory to write the demo case artifacts."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Run a local planning-only demo flow from endpoints.txt to brain-chat state."""
+    try:
+        flow = run_brain_chat_demo_flow(
+            endpoints_file=endpoints_file,
+            target_name=target_name,
+            output_dir=output_dir,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid brain chat demo flow input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    flow_data = flow.to_dict()
+    markdown = flow.to_markdown()
+
+    table = Table(title="Brain Chat Demo Flow")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Target", flow.target_name)
+    table.add_row("Output dir", flow.output_dir)
+    table.add_row("Brain state dir", flow.brain_state_dir)
+    table.add_row("Focus endpoint", flow.focus_endpoint or "none")
+    table.add_row("Recommendation", flow.recommendation)
+    table.add_row("Artifacts", str(len(flow.artifacts)))
+    table.add_row("Tool execution", "false")
+    table.add_row("Provider execution", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved brain chat demo flow Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(flow_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved brain chat demo flow JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only builds local planning artifacts and a brain-chat state directory. "
+        "It does not execute tools, send requests, call providers, launch browsers, or confirm vulnerabilities."
+    )
 
 
 @app.command("brain-state-export")
