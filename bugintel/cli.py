@@ -90,6 +90,7 @@ from bugintel.core.brain_approval import build_brain_approval_packet, render_bra
 from bugintel.core.tool_request_manifest import build_tool_request_manifest, render_tool_request_manifest_markdown
 from bugintel.core.tool_execution_gate import build_tool_execution_gate, render_tool_execution_gate_markdown
 from bugintel.core.brain_chat import build_brain_chat_reply
+from bugintel.core.brain_state_export import build_brain_state_export
 from bugintel.core.brain_chat_session import append_brain_chat_turn, load_brain_chat_session, save_brain_chat_session
 from bugintel.core.task_tree import build_endpoint_task_tree, render_tree
 from bugintel.core.research_planner import build_research_plan_from_browser_evidence, render_research_plan_markdown, ResearchPlan, ResearchHypothesis, ResearchRecommendation, EvidenceReference
@@ -453,6 +454,63 @@ def endpoint_investigation_command(
 
 
 
+
+
+@app.command("brain-state-export")
+def brain_state_export_command(
+    ai_brain_file: Path = typer.Option(..., "--ai-brain", help="Path to ai-brain JSON."),
+    brain_decision_file: Path = typer.Option(..., "--brain-decision", help="Path to brain-decision JSON."),
+    brain_approval_file: Path = typer.Option(..., "--brain-approval", help="Path to brain-approval JSON."),
+    tool_execution_gate_file: Path = typer.Option(..., "--tool-execution-gate", help="Path to tool-execution-gate JSON."),
+    output_dir: Path = typer.Option(..., "--output-dir", help="Directory to write brain-chat state files."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Export generated brain artifacts into the numbered state-dir format expected by brain-chat."""
+    try:
+        export = build_brain_state_export(
+            ai_brain=ai_brain_file,
+            brain_decision=brain_decision_file,
+            brain_approval=brain_approval_file,
+            tool_execution_gate=tool_execution_gate_file,
+            output_dir=output_dir,
+        )
+    except ValueError as exc:
+        console.print(f"[bold red]Invalid brain state export input:[/bold red] {exc}")
+        raise typer.Exit(code=2)
+
+    export_data = export.to_dict()
+    markdown = export.to_markdown()
+
+    table = Table(title="Brain State Export")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Output dir", export.output_dir)
+    table.add_row("Recommendation", export.recommendation)
+    table.add_row("Exported files", str(len(export.exported_items)))
+    table.add_row("File copy only", "true")
+    table.add_row("Tool execution", "false")
+    table.add_row("Provider execution", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    for item in export.exported_items:
+        console.print(f"[bold green]Exported {item.role}:[/bold green] {item.output_path}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved brain state export Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(export_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved brain state export JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only copies local brain artifacts into the brain-chat state layout. "
+        "It does not execute tools, send requests, call providers, or confirm vulnerabilities."
+    )
 
 
 @app.command("brain-chat")
