@@ -4,20 +4,24 @@
 [![Latest release](https://img.shields.io/github/v/release/Siddforeal/Blackhole_AI?label=release)](https://github.com/Siddforeal/Blackhole_AI/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**Blackhole AI Workbench** is a human-in-the-loop security research workbench for authorized vulnerability research, bug bounty workflows, endpoint intelligence, evidence planning, and report preparation.
+**Blackhole AI Workbench** is a human-in-the-loop security research workbench for authorized
+vulnerability research, bug bounty workflows, endpoint intelligence, evidence planning, and
+report preparation.
 
 It is **not a scanner** and it is **not an auto-exploitation tool**.
 
-Blackhole is built around safe planning, local evidence, explicit human approval, and conservative report-readiness gates.
+Blackhole is built around safe planning, local evidence, explicit human approval, and
+conservative report-readiness gates.
 
-**Current release:** `v0.72.0`
-**Project status:** active research prototype
+**Current release:** `v0.72.0` **Project status:** active research prototype
 
 ---
 
 ## Why Blackhole Exists
 
-Security research produces fragmented material: endpoints, HAR files, screenshots, API responses, notes, hypotheses, validation steps, evidence bundles, and report-readiness decisions.
+Security research produces fragmented material: endpoints, HAR files, screenshots, API
+responses, notes, hypotheses, validation steps, evidence bundles, and report-readiness
+decisions.
 
 Blackhole turns that material into a structured workflow:
 
@@ -32,7 +36,8 @@ inputs
 → human-written report support
 ```
 
-The goal is to help a researcher think clearly, prioritize high-signal paths, preserve evidence, avoid overclaims, and produce stronger human-reviewed reports.
+The goal is to help a researcher think clearly, prioritize high-signal paths, preserve evidence,
+avoid overclaims, and produce stronger human-reviewed reports.
 
 ---
 
@@ -63,7 +68,8 @@ Blackhole currently does **not** automatically:
 - confirm vulnerabilities
 - submit reports
 
-Every provider/tool/browser/execution-oriented workflow is represented as a reviewable plan, gate, packet, or checklist until a human explicitly validates the next step.
+Every provider/tool/browser/execution-oriented workflow is represented as a reviewable plan,
+gate, packet, or checklist until a human explicitly validates the next step.
 
 ---
 
@@ -85,7 +91,8 @@ endpoint list
 
 ### Case Chat and Provider Review Pipeline
 
-Blackhole supports a safety-gated case-chat workflow that treats external or provider-generated text as untrusted planning input:
+Blackhole supports a safety-gated case-chat workflow that treats external or provider-generated
+text as untrusted planning input:
 
 ```text
 case-chat-prompt-package
@@ -104,9 +111,11 @@ case-chat-prompt-package
 
 ### Report Readiness
 
-The current release can review whether a gated export bundle is ready to support a human-written report draft.
+The current release can review whether a gated export bundle is ready to support a human-written
+report draft.
 
-It separates report-ready support notes, blockers, missing evidence, unsafe items, artifact problems, overclaim risks, safety blockers, final checklist items, and report guardrails.
+It separates report-ready support notes, blockers, missing evidence, unsafe items, artifact
+problems, overclaim risks, safety blockers, final checklist items, and report guardrails.
 
 It still does **not** generate or submit reports automatically.
 
@@ -162,7 +171,8 @@ blackhole case-chat-export-bundle-report-readiness-review \
   --json-output /tmp/report-readiness.json
 ```
 
-This produces a planning-only readiness review. It does not generate a report, submit a report, call providers, execute tools, or confirm a vulnerability.
+This produces a planning-only readiness review. It does not generate a report, submit a report,
+call providers, execute tools, or confirm a vulnerability.
 
 ---
 
@@ -203,9 +213,11 @@ This produces a planning-only readiness review. It does not generate a report, s
 
 ## Ethical Use
 
-Use Blackhole only on systems you own, local labs, CTFs, written-scope penetration tests, or explicitly authorized bug bounty programs.
+Use Blackhole only on systems you own, local labs, CTFs, written-scope penetration tests, or
+explicitly authorized bug bounty programs.
 
-Do not use it for unauthorized scanning, exploitation, credential theft, persistence, stealth, denial-of-service activity, destructive testing, or accessing private data.
+Do not use it for unauthorized scanning, exploitation, credential theft, persistence, stealth,
+denial-of-service activity, destructive testing, or accessing private data.
 
 ---
 
