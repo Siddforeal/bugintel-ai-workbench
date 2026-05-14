@@ -13,7 +13,9 @@ It is **not a scanner** and it is **not an auto-exploitation tool**.
 Blackhole is built around safe planning, local evidence, explicit human approval, and
 conservative report-readiness gates.
 
-**Current release:** `v0.72.0` **Project status:** active research prototype
+**Current release:** `v0.72.0`
+
+**Project status:** active research prototype
 
 ---
 
