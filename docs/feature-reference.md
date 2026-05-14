@@ -4,7 +4,7 @@
 
 Blackhole AI Workbench is a human-in-the-loop security research workbench for authorized vulnerability discovery, endpoint intelligence, response analysis, and structured evidence collection.
 
-Current version: 0.71.0
+Current version: 0.72.0
 
 ## Research Goal
 
@@ -1177,3 +1177,28 @@ It routes questions such as:
 The router maps these questions to existing safe answer types: focus, blockers, approvals, evidence, execution, reportability, status, next steps, and help.
 
 This feature does not add provider calls, execution, network interaction, report generation, or vulnerability confirmation.
+
+## v0.72.0 - Brain State Export Builder
+
+The brain state export builder removes the manual copy/rename step required by `brain-chat`.
+
+It exports generated brain artifacts into the numbered state directory layout expected by `brain-chat`:
+
+    03-ai-brain.json
+    06-brain-decision.json
+    07-brain-approval.json
+    09-tool-execution-gate.json
+
+This makes the local brain-chat workflow easier to use after building:
+
+    ai-brain
+    brain-prompt
+    brain-review
+    brain-decision
+    brain-approval
+    tool-request-manifest
+    tool-execution-gate
+    brain-state-export
+    brain-chat
+
+This feature is local-only and file-copy-only. It does not execute tools, call providers, send requests, launch browsers, mutate targets, or confirm vulnerabilities.

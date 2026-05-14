@@ -1066,3 +1066,35 @@ Safety properties:
 - no network interaction
 - no report submission
 - no automatic vulnerability confirmation
+
+## brain-state-export
+
+Export generated brain artifacts into the numbered state directory expected by `brain-chat`.
+
+Example:
+
+    blackhole brain-state-export \
+      --ai-brain /tmp/case/ai-brain.json \
+      --brain-decision /tmp/case/brain-decision.json \
+      --brain-approval /tmp/case/brain-approval.json \
+      --tool-execution-gate /tmp/case/tool-execution-gate.json \
+      --output-dir /tmp/case/brain \
+      --output /tmp/case/brain-state-export.md \
+      --json-output /tmp/case/brain-state-export.json
+
+The command writes:
+
+    03-ai-brain.json
+    06-brain-decision.json
+    07-brain-approval.json
+    09-tool-execution-gate.json
+
+Safety properties:
+
+- local file copy only
+- no tool execution
+- no browser execution
+- no curl or Kali execution
+- no network interaction
+- no LLM provider calls
+- no vulnerability confirmation

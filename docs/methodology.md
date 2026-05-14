@@ -1696,3 +1696,9 @@ This protects the workflow from treating a report skeleton as a final generated 
 `brain-chat` can route common natural questions to deterministic local answers from the generated brain state.
 
 This makes the local assistant easier to use while preserving the safety model. It still answers only from local planning artifacts and does not call providers, execute tools, or confirm vulnerabilities.
+
+## Brain State Export
+
+After building the brain planning artifacts, Blackhole can export them into the numbered layout expected by `brain-chat`.
+
+This removes manual file copying and keeps the workflow local, deterministic, and planning-only.
