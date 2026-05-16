@@ -1098,3 +1098,47 @@ Safety properties:
 - no network interaction
 - no LLM provider calls
 - no vulnerability confirmation
+
+## brain-chat-demo-flow
+
+Run a local planning-only demo flow from an endpoints file to a usable `brain-chat` state directory.
+
+Example:
+
+    blackhole brain-chat-demo-flow /tmp/case/endpoints.txt \
+      --target demo.local \
+      --output-dir /tmp/case \
+      --output /tmp/case/brain-chat-demo-flow.md \
+      --json-output /tmp/case/brain-chat-demo-flow.json
+
+The command creates:
+
+    orchestration.json
+    research-state.json
+    research-state.md
+    ai-brain.json
+    brain-prompt.json
+    brain-review.json
+    brain-decision.json
+    brain-approval.json
+    tool-request-manifest.json
+    tool-execution-gate.json
+    brain-state-export.json
+    brain/03-ai-brain.json
+    brain/06-brain-decision.json
+    brain/07-brain-approval.json
+    brain/09-tool-execution-gate.json
+
+After the flow completes, ask:
+
+    blackhole brain-chat "What should I test first?" --state-dir /tmp/case/brain
+
+Safety properties:
+
+- local artifact generation only
+- no network interaction
+- no tool execution
+- no browser execution
+- no curl or Kali execution
+- no LLM provider calls
+- no vulnerability confirmation

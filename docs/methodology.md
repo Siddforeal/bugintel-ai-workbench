@@ -1702,3 +1702,11 @@ This makes the local assistant easier to use while preserving the safety model. 
 After building the brain planning artifacts, Blackhole can export them into the numbered layout expected by `brain-chat`.
 
 This removes manual file copying and keeps the workflow local, deterministic, and planning-only.
+
+## Brain Chat Demo Flow
+
+Blackhole can build a complete local planning-only demo case from an endpoint list.
+
+The demo flow helps users understand the research-state, brain, approval, execution-gate, and brain-chat workflow without manually running every command.
+
+It remains local-only and does not perform network or tool execution.

@@ -4,7 +4,7 @@
 
 Blackhole AI Workbench is a human-in-the-loop security research workbench for authorized vulnerability discovery, endpoint intelligence, response analysis, and structured evidence collection.
 
-Current version: 0.72.0
+Current version: 0.73.0
 
 ## Research Goal
 
@@ -1202,3 +1202,24 @@ This makes the local brain-chat workflow easier to use after building:
     brain-chat
 
 This feature is local-only and file-copy-only. It does not execute tools, call providers, send requests, launch browsers, mutate targets, or confirm vulnerabilities.
+
+## v0.73.0 - Brain Chat Demo Flow
+
+The brain chat demo flow runs the local planning-only chain from an endpoints file to a ready-to-use `brain-chat` state directory.
+
+It creates the core artifacts needed to understand how Blackhole works:
+
+    endpoints.txt
+    → orchestration
+    → research-state
+    → ai-brain
+    → brain-prompt
+    → brain-review
+    → brain-decision
+    → brain-approval
+    → tool-request-manifest
+    → tool-execution-gate
+    → brain-state-export
+    → brain-chat-ready state directory
+
+This feature is designed for first-run demos and onboarding. It does not execute tools, call providers, send requests, launch browsers, mutate targets, or confirm vulnerabilities.
