@@ -1142,3 +1142,34 @@ Safety properties:
 - no curl or Kali execution
 - no LLM provider calls
 - no vulnerability confirmation
+
+## brain-chat case directory discovery
+
+`brain-chat` can now resolve a case directory automatically.
+
+Examples:
+
+    blackhole brain-chat "What should I test first?" --case-dir /tmp/case
+
+From inside a case directory:
+
+    cd /tmp/case
+    blackhole brain-chat "What should I test first?"
+
+Resolution order:
+
+1. `--state-dir` when explicitly provided
+2. `--case-dir/brain` when `--case-dir` is provided
+3. `--case-dir` if it directly contains numbered brain files
+4. `./brain` from the current working directory
+5. `.` as the fallback state directory
+
+Safety properties remain unchanged:
+
+- no LLM provider calls
+- no tool execution
+- no browser execution
+- no curl or Kali execution
+- no network interaction
+- no report submission
+- no automatic vulnerability confirmation

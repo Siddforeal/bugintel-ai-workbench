@@ -1710,3 +1710,9 @@ Blackhole can build a complete local planning-only demo case from an endpoint li
 The demo flow helps users understand the research-state, brain, approval, execution-gate, and brain-chat workflow without manually running every command.
 
 It remains local-only and does not perform network or tool execution.
+
+## Brain Chat Case Directory Discovery
+
+After running a demo flow or exporting brain state, `brain-chat` can discover the `brain/` directory from a case directory.
+
+This keeps the local assistant easier to use without weakening the safety model.
