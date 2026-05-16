@@ -597,6 +597,28 @@ def _resolve_brain_chat_state_dir(state_dir: Path | None, case_dir: Path | None)
     return cwd
 
 
+def _resolve_brain_chat_session_path(
+    session: Path | None,
+    state_dir: Path | None,
+    case_dir: Path | None,
+    resolved_state_dir: Path,
+) -> Path | None:
+    if session is not None:
+        return session
+
+    if state_dir is not None:
+        return None
+
+    if case_dir is not None:
+        return case_dir / "brain-chat-session.json"
+
+    cwd = Path(".")
+    if resolved_state_dir == cwd / "brain":
+        return cwd / "brain-chat-session.json"
+
+    return None
+
+
 @app.command("brain-chat")
 def brain_chat_command(
     question: str = typer.Argument(..., help="Question to ask the local deterministic brain."),
@@ -623,18 +645,24 @@ def brain_chat_command(
 ):
     """Ask the local planning-only brain state a deterministic question."""
     resolved_state_dir = _resolve_brain_chat_state_dir(state_dir=state_dir, case_dir=case_dir)
+    resolved_session = _resolve_brain_chat_session_path(
+        session=session,
+        state_dir=state_dir,
+        case_dir=case_dir,
+        resolved_state_dir=resolved_state_dir,
+    )
     reply = build_brain_chat_reply(question, resolved_state_dir)
     data = reply.to_dict()
 
     console.print("[bold green]Blackhole:[/bold green]")
     console.print(reply.answer)
 
-    if session:
-        current_session = load_brain_chat_session(session)
+    if resolved_session:
+        current_session = load_brain_chat_session(resolved_session)
         updated_session = append_brain_chat_turn(current_session, reply)
-        save_brain_chat_session(updated_session, session)
+        save_brain_chat_session(updated_session, resolved_session)
         console.print(
-            f"[bold green]Saved brain chat session:[/bold green] {session} "
+            f"[bold green]Saved brain chat session:[/bold green] {resolved_session} "
             f"({len(updated_session.turns)} turn(s))"
         )
 

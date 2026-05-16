@@ -121,3 +121,73 @@ def test_brain_chat_cli_auto_discovers_brain_subdirectory(tmp_path, monkeypatch)
     assert result.exit_code == 0
     assert "/api/accounts/123/users/{id}/permissions" in result.output
     assert "critical/80" in result.output
+
+
+def test_brain_chat_cli_auto_saves_session_for_case_dir(tmp_path):
+    brain_dir = tmp_path / "brain"
+    brain_dir.mkdir()
+    _write_state(brain_dir)
+
+    result = runner.invoke(
+        app,
+        [
+            "brain-chat",
+            "What should I test first?",
+            "--case-dir",
+            str(tmp_path),
+        ],
+    )
+
+    session_file = tmp_path / "brain-chat-session.json"
+
+    assert result.exit_code == 0
+    assert "Saved brain chat session" in result.output
+    assert session_file.exists()
+
+    data = json.loads(session_file.read_text())
+    assert data["turn_count"] == 1
+    assert data["turns"][0]["question"] == "What should I test first?"
+
+
+def test_brain_chat_cli_auto_saves_session_from_case_cwd(tmp_path, monkeypatch):
+    brain_dir = tmp_path / "brain"
+    brain_dir.mkdir()
+    _write_state(brain_dir)
+
+    monkeypatch.chdir(tmp_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "brain-chat",
+            "What evidence do we need?",
+        ],
+    )
+
+    session_file = tmp_path / "brain-chat-session.json"
+
+    assert result.exit_code == 0
+    assert "Saved brain chat session" in result.output
+    assert session_file.exists()
+
+    data = json.loads(session_file.read_text())
+    assert data["turn_count"] == 1
+    assert data["turns"][0]["question"] == "What evidence do we need?"
+
+
+def test_brain_chat_cli_state_dir_does_not_auto_save_session(tmp_path):
+    _write_state(tmp_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "brain-chat",
+            "What should I test first?",
+            "--state-dir",
+            str(tmp_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Saved brain chat session" not in result.output
+    assert not (tmp_path / "brain-chat-session.json").exists()
