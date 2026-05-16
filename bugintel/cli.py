@@ -566,13 +566,49 @@ def brain_state_export_command(
     )
 
 
+def _looks_like_brain_chat_state_dir(path: Path) -> bool:
+    return all(
+        (path / filename).exists()
+        for filename in (
+            "03-ai-brain.json",
+            "06-brain-decision.json",
+            "07-brain-approval.json",
+            "09-tool-execution-gate.json",
+        )
+    )
+
+
+def _resolve_brain_chat_state_dir(state_dir: Path | None, case_dir: Path | None) -> Path:
+    if state_dir is not None:
+        return state_dir
+
+    if case_dir is not None:
+        case_brain_dir = case_dir / "brain"
+        if _looks_like_brain_chat_state_dir(case_brain_dir):
+            return case_brain_dir
+        if _looks_like_brain_chat_state_dir(case_dir):
+            return case_dir
+        return case_brain_dir
+
+    cwd = Path(".")
+    if _looks_like_brain_chat_state_dir(cwd / "brain"):
+        return cwd / "brain"
+
+    return cwd
+
+
 @app.command("brain-chat")
 def brain_chat_command(
     question: str = typer.Argument(..., help="Question to ask the local deterministic brain."),
-    state_dir: Path = typer.Option(
-        Path("."),
+    state_dir: Path | None = typer.Option(
+        None,
         "--state-dir",
         help="Directory containing generated Blackhole brain artifacts.",
+    ),
+    case_dir: Path | None = typer.Option(
+        None,
+        "--case-dir",
+        help="Case directory containing a brain/ state directory.",
     ),
     session: Path | None = typer.Option(
         None,
@@ -586,7 +622,8 @@ def brain_chat_command(
     ),
 ):
     """Ask the local planning-only brain state a deterministic question."""
-    reply = build_brain_chat_reply(question, state_dir)
+    resolved_state_dir = _resolve_brain_chat_state_dir(state_dir=state_dir, case_dir=case_dir)
+    reply = build_brain_chat_reply(question, resolved_state_dir)
     data = reply.to_dict()
 
     console.print("[bold green]Blackhole:[/bold green]")

@@ -81,3 +81,43 @@ def test_brain_chat_cli_appends_session(tmp_path):
     assert data["planning_only"] is True
     assert data["turns"][0]["question"] == "hello"
     assert data["turns"][1]["question"] == "status"
+
+
+def test_brain_chat_cli_resolves_case_dir(tmp_path):
+    brain_dir = tmp_path / "brain"
+    brain_dir.mkdir()
+    _write_state(brain_dir)
+
+    result = runner.invoke(
+        app,
+        [
+            "brain-chat",
+            "What should I test first?",
+            "--case-dir",
+            str(tmp_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "/api/accounts/123/users/{id}/permissions" in result.output
+    assert "critical/80" in result.output
+
+
+def test_brain_chat_cli_auto_discovers_brain_subdirectory(tmp_path, monkeypatch):
+    brain_dir = tmp_path / "brain"
+    brain_dir.mkdir()
+    _write_state(brain_dir)
+
+    monkeypatch.chdir(tmp_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "brain-chat",
+            "What should I test first?",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "/api/accounts/123/users/{id}/permissions" in result.output
+    assert "critical/80" in result.output
