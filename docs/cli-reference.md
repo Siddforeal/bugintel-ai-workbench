@@ -1173,3 +1173,33 @@ Safety properties remain unchanged:
 - no network interaction
 - no report submission
 - no automatic vulnerability confirmation
+
+## brain-chat case session auto-save
+
+`brain-chat` now automatically saves local session history when a case directory can be resolved.
+
+Examples:
+
+    blackhole brain-chat "What should I test first?" --case-dir /tmp/case
+
+From inside a case directory:
+
+    cd /tmp/case
+    blackhole brain-chat "What should I test first?"
+
+Auto-save behavior:
+
+- `--session /custom/session.json` still wins as an explicit override
+- `--case-dir /tmp/case` saves to `/tmp/case/brain-chat-session.json`
+- running from inside a case directory with `./brain` saves to `./brain-chat-session.json`
+- explicit `--state-dir` does not auto-save unless `--session` is provided
+
+Safety properties remain unchanged:
+
+- no LLM provider calls
+- no tool execution
+- no browser execution
+- no curl or Kali execution
+- no network interaction
+- no report submission
+- no automatic vulnerability confirmation

@@ -4,7 +4,7 @@
 
 Blackhole AI Workbench is a human-in-the-loop security research workbench for authorized vulnerability discovery, endpoint intelligence, response analysis, and structured evidence collection.
 
-Current version: 0.74.0
+Current version: 0.75.0
 
 ## Research Goal
 
@@ -1237,5 +1237,30 @@ or, from inside a case directory containing `brain/`:
     blackhole brain-chat "What should I test first?"
 
 This removes the need to always pass `--state-dir /tmp/case/brain` after using `brain-chat-demo-flow`.
+
+This feature remains deterministic and local-only. It does not add provider calls, execution, network interaction, report generation, or vulnerability confirmation.
+
+## v0.75.0 - Brain Chat Case Session Auto-Save
+
+The brain-chat case session auto-save release makes local chat history automatic when using a case directory.
+
+After this release:
+
+    blackhole brain-chat "What should I test first?" --case-dir /tmp/case
+
+automatically appends the turn to:
+
+    /tmp/case/brain-chat-session.json
+
+And from inside a case directory:
+
+    cd /tmp/case
+    blackhole brain-chat "What should I test first?"
+
+automatically appends the turn to:
+
+    ./brain-chat-session.json
+
+Explicit `--session` remains the manual override. Explicit `--state-dir` remains session-neutral unless `--session` is also provided.
 
 This feature remains deterministic and local-only. It does not add provider calls, execution, network interaction, report generation, or vulnerability confirmation.

@@ -13,7 +13,7 @@ It is **not a scanner** and it is **not an auto-exploitation tool**.
 Blackhole is built around safe planning, local evidence, explicit human approval, and
 conservative report-readiness gates.
 
-**Current release:** `v0.74.0`
+**Current release:** `v0.75.0`
 
 **Project status:** active research prototype
 
@@ -196,6 +196,7 @@ call providers, execute tools, or confirm a vulnerability.
 
 | Version | Focus |
 |---|---|
+| `v0.75.0` | Brain Chat Case Session Auto-Save |
 | `v0.74.0` | Brain Chat Case Directory Discovery |
 | `v0.73.0` | Brain Chat Demo Flow |
 | `v0.72.0` | Brain State Export Builder |

@@ -1716,3 +1716,9 @@ It remains local-only and does not perform network or tool execution.
 After running a demo flow or exporting brain state, `brain-chat` can discover the `brain/` directory from a case directory.
 
 This keeps the local assistant easier to use without weakening the safety model.
+
+## Brain Chat Case Session Auto-Save
+
+When a case directory is available, `brain-chat` can automatically save local conversation turns to `brain-chat-session.json`.
+
+This keeps local case chat history available without requiring a manual `--session` path on every command.
