@@ -1203,3 +1203,39 @@ Safety properties remain unchanged:
 - no network interaction
 - no report submission
 - no automatic vulnerability confirmation
+
+## brain-chat-session-summary
+
+Summarize a local brain-chat session JSON file.
+
+Examples:
+
+    blackhole brain-chat-session-summary /tmp/case/brain-chat-session.json
+
+From inside a case directory:
+
+    cd /tmp/case
+    blackhole brain-chat-session-summary
+
+The summary includes:
+
+- total turns
+- latest question
+- latest focus endpoint
+- latest decision
+- latest approval status
+- latest execution gate
+- latest execution allowed flag
+- repeated questions
+- suggested next question
+
+Safety properties:
+
+- local session summary only
+- no LLM provider calls
+- no tool execution
+- no browser execution
+- no curl or Kali execution
+- no network interaction
+- no report submission
+- no automatic vulnerability confirmation

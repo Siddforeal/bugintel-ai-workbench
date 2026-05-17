@@ -1722,3 +1722,9 @@ This keeps the local assistant easier to use without weakening the safety model.
 When a case directory is available, `brain-chat` can automatically save local conversation turns to `brain-chat-session.json`.
 
 This keeps local case chat history available without requiring a manual `--session` path on every command.
+
+## Brain Chat Session Summaries
+
+After brain-chat turns are saved, Blackhole can summarize the session into a compact local review.
+
+This helps track what was asked, what the latest focus endpoint is, which gates are still blocking validation, and what question to ask next.

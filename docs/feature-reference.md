@@ -4,7 +4,7 @@
 
 Blackhole AI Workbench is a human-in-the-loop security research workbench for authorized vulnerability discovery, endpoint intelligence, response analysis, and structured evidence collection.
 
-Current version: 0.75.0
+Current version: 0.76.0
 
 ## Research Goal
 
@@ -1262,5 +1262,21 @@ automatically appends the turn to:
     ./brain-chat-session.json
 
 Explicit `--session` remains the manual override. Explicit `--state-dir` remains session-neutral unless `--session` is also provided.
+
+This feature remains deterministic and local-only. It does not add provider calls, execution, network interaction, report generation, or vulnerability confirmation.
+
+## v0.76.0 - Brain Chat Session Summary Command
+
+The brain-chat session summary command makes saved local chat history easier to review.
+
+It can summarize:
+
+    /tmp/case/brain-chat-session.json
+
+or, from inside a case directory:
+
+    ./brain-chat-session.json
+
+The summary reports total turns, latest question, latest focus endpoint, latest decision, approval status, execution gate, repeated questions, and a suggested next question.
 
 This feature remains deterministic and local-only. It does not add provider calls, execution, network interaction, report generation, or vulnerability confirmation.
