@@ -68,3 +68,37 @@ def test_render_brain_chat_session_summary():
     assert "# Blackhole Brain Chat Session" in summary
     assert "Turns: `1`" in summary
     assert "blocked-pending-scope-and-controls" in summary
+
+
+def test_summarize_brain_chat_session_reports_latest_and_repeated_questions():
+    from bugintel.core.brain_chat_session import summarize_brain_chat_session
+
+    session = load_brain_chat_session.__globals__["BrainChatSession"]()
+    session = append_brain_chat_turn(session, _reply("What should I test first?"))
+    session = append_brain_chat_turn(session, _reply("What is blocking validation?"))
+    session = append_brain_chat_turn(session, _reply("What should I test first?"))
+
+    summary = summarize_brain_chat_session(session)
+    data = summary.to_dict()
+
+    assert data["turn_count"] == 3
+    assert data["latest_question"] == "What should I test first?"
+    assert data["latest_focus_endpoint"] == "/api/accounts/123/users/{id}/permissions"
+    assert data["latest_decision"] == "blocked-pending-scope-and-controls"
+    assert data["latest_approval_status"] == "blocked-pending-approval"
+    assert data["latest_execution_gate"] == "blocked-manifest-execution-disabled"
+    assert data["latest_execution_allowed"] is False
+    assert data["repeated_questions"] == ["What should I test first?"]
+    assert data["suggested_next_question"] == "What is blocking validation?"
+
+
+def test_render_brain_chat_session_summary_includes_summary_section():
+    session = load_brain_chat_session.__globals__["BrainChatSession"]()
+    session = append_brain_chat_turn(session, _reply("What evidence do we need?"))
+
+    summary = render_brain_chat_session_summary(session)
+
+    assert "## Summary" in summary
+    assert "Latest question: `What evidence do we need?`" in summary
+    assert "Suggested next question:" in summary
+    assert "## Repeated Questions" in summary

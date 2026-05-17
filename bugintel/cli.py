@@ -92,7 +92,7 @@ from bugintel.core.tool_execution_gate import build_tool_execution_gate, render_
 from bugintel.core.brain_chat import build_brain_chat_reply
 from bugintel.core.brain_state_export import build_brain_state_export
 from bugintel.core.brain_chat_demo_flow import run_brain_chat_demo_flow
-from bugintel.core.brain_chat_session import append_brain_chat_turn, load_brain_chat_session, save_brain_chat_session
+from bugintel.core.brain_chat_session import append_brain_chat_turn, load_brain_chat_session, render_brain_chat_session_summary, save_brain_chat_session, summarize_brain_chat_session
 from bugintel.core.task_tree import build_endpoint_task_tree, render_tree
 from bugintel.core.research_planner import build_research_plan_from_browser_evidence, render_research_plan_markdown, ResearchPlan, ResearchHypothesis, ResearchRecommendation, EvidenceReference
 from bugintel.core.llm_prompt import LLMPromptPackage, build_llm_prompt_package_from_research_plan, render_llm_prompt_package_markdown
@@ -617,6 +617,60 @@ def _resolve_brain_chat_session_path(
         return cwd / "brain-chat-session.json"
 
     return None
+
+
+@app.command("brain-chat-session-summary")
+def brain_chat_session_summary_command(
+    session_file: Path | None = typer.Argument(None, help="Path to brain-chat-session JSON. Defaults to ./brain-chat-session.json."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Summarize a local brain-chat session JSON file."""
+    resolved_session_file = session_file or Path("brain-chat-session.json")
+
+    if not resolved_session_file.exists():
+        console.print(f"[bold red]Brain chat session JSON not found:[/bold red] {resolved_session_file}")
+        raise typer.Exit(code=1)
+
+    session = load_brain_chat_session(resolved_session_file)
+    summary = summarize_brain_chat_session(session)
+    markdown = render_brain_chat_session_summary(session)
+    data = summary.to_dict()
+
+    table = Table(title="Brain Chat Session Summary")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Session", str(resolved_session_file))
+    table.add_row("Turns", str(summary.turn_count))
+    table.add_row("Latest question", summary.latest_question or "none")
+    table.add_row("Latest focus endpoint", summary.latest_focus_endpoint or "none")
+    table.add_row("Latest decision", summary.latest_decision)
+    table.add_row("Latest approval status", summary.latest_approval_status)
+    table.add_row("Latest execution gate", summary.latest_execution_gate)
+    table.add_row("Execution allowed", str(summary.latest_execution_allowed))
+    table.add_row("Repeated questions", str(len(summary.repeated_questions)))
+    table.add_row("Suggested next question", summary.suggested_next_question)
+    console.print(table)
+
+    if summary.repeated_questions:
+        console.print("[bold yellow]Repeated questions:[/bold yellow]")
+        for question in summary.repeated_questions:
+            console.print(f"- {question}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown, encoding="utf-8")
+        console.print(f"[bold green]Saved brain chat session summary Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved brain chat session summary JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only summarizes local brain-chat session history. "
+        "It does not call providers, execute tools, send requests, or confirm vulnerabilities."
+    )
 
 
 @app.command("brain-chat")

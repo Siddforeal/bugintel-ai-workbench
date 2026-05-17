@@ -48,6 +48,36 @@ class BrainChatSession:
         }
 
 
+@dataclass(frozen=True)
+class BrainChatSessionSummary:
+    turn_count: int
+    latest_question: str | None
+    latest_focus_endpoint: str | None
+    latest_decision: str
+    latest_approval_status: str
+    latest_execution_gate: str
+    latest_execution_allowed: bool
+    repeated_questions: tuple[str, ...]
+    suggested_next_question: str
+    planning_only: bool = True
+    execution_state: str = "not_executed"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "turn_count": self.turn_count,
+            "latest_question": self.latest_question,
+            "latest_focus_endpoint": self.latest_focus_endpoint,
+            "latest_decision": self.latest_decision,
+            "latest_approval_status": self.latest_approval_status,
+            "latest_execution_gate": self.latest_execution_gate,
+            "latest_execution_allowed": self.latest_execution_allowed,
+            "repeated_questions": list(self.repeated_questions),
+            "suggested_next_question": self.suggested_next_question,
+            "planning_only": self.planning_only,
+            "execution_state": self.execution_state,
+        }
+
+
 def load_brain_chat_session(path: Path) -> BrainChatSession:
     if not path.exists():
         return BrainChatSession()
@@ -94,14 +124,84 @@ def save_brain_chat_session(session: BrainChatSession, path: Path) -> None:
     path.write_text(json.dumps(session.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def summarize_brain_chat_session(session: BrainChatSession) -> BrainChatSessionSummary:
+    latest = session.turns[-1] if session.turns else None
+    repeated = _repeated_questions(session)
+
+    return BrainChatSessionSummary(
+        turn_count=len(session.turns),
+        latest_question=latest.question if latest else None,
+        latest_focus_endpoint=latest.focus_endpoint if latest else None,
+        latest_decision=latest.decision if latest else "unknown",
+        latest_approval_status=latest.approval_status if latest else "unknown",
+        latest_execution_gate=latest.execution_gate if latest else "unknown",
+        latest_execution_allowed=latest.execution_allowed if latest else False,
+        repeated_questions=tuple(repeated),
+        suggested_next_question=_suggest_next_question(latest, repeated),
+        planning_only=session.planning_only,
+        execution_state=session.execution_state,
+    )
+
+
+def _repeated_questions(session: BrainChatSession) -> list[str]:
+    seen: dict[str, int] = {}
+    display: dict[str, str] = {}
+
+    for turn in session.turns:
+        normalized = " ".join(turn.question.lower().split())
+        if not normalized:
+            continue
+
+        seen[normalized] = seen.get(normalized, 0) + 1
+        display.setdefault(normalized, turn.question)
+
+    return [display[key] for key, count in seen.items() if count > 1]
+
+
+def _suggest_next_question(latest: BrainChatTurn | None, repeated_questions: list[str]) -> str:
+    if latest is None:
+        return "What should I test first?"
+
+    if latest.execution_allowed:
+        return "What evidence should I collect next?"
+
+    if latest.decision != "blocked-pending-scope-and-controls":
+        return "What evidence do we need?"
+
+    if repeated_questions:
+        return "What is blocking validation?"
+
+    return "What approvals are missing?"
+
+
 def render_brain_chat_session_summary(session: BrainChatSession) -> str:
+    summary = summarize_brain_chat_session(session)
     lines = [
         "# Blackhole Brain Chat Session",
         "",
-        f"- Turns: `{len(session.turns)}`",
-        f"- Execution state: `{session.execution_state}`",
+        "## Summary",
+        "",
+        f"- Turns: `{summary.turn_count}`",
+        f"- Execution state: `{summary.execution_state}`",
+        f"- Latest question: `{summary.latest_question or 'none'}`",
+        f"- Latest focus endpoint: `{summary.latest_focus_endpoint or 'none'}`",
+        f"- Latest decision: `{summary.latest_decision}`",
+        f"- Latest approval status: `{summary.latest_approval_status}`",
+        f"- Latest execution gate: `{summary.latest_execution_gate}`",
+        f"- Latest execution allowed: `{summary.latest_execution_allowed}`",
+        f"- Suggested next question: `{summary.suggested_next_question}`",
+        "",
+        "## Repeated Questions",
         "",
     ]
+
+    if summary.repeated_questions:
+        for question in summary.repeated_questions:
+            lines.append(f"- `{question}`")
+    else:
+        lines.append("- none")
+
+    lines.append("")
 
     for index, turn in enumerate(session.turns, start=1):
         lines.append(f"## Turn {index}")
