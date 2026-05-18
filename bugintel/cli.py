@@ -93,6 +93,7 @@ from bugintel.core.brain_chat import build_brain_chat_reply
 from bugintel.core.brain_state_export import build_brain_state_export
 from bugintel.core.brain_chat_demo_flow import run_brain_chat_demo_flow
 from bugintel.core.brain_chat_session import append_brain_chat_turn, load_brain_chat_session, render_brain_chat_session_summary, save_brain_chat_session, summarize_brain_chat_session
+from bugintel.core.brain_chat_session_next_step import build_brain_chat_session_next_step_plan
 from bugintel.core.task_tree import build_endpoint_task_tree, render_tree
 from bugintel.core.research_planner import build_research_plan_from_browser_evidence, render_research_plan_markdown, ResearchPlan, ResearchHypothesis, ResearchRecommendation, EvidenceReference
 from bugintel.core.llm_prompt import LLMPromptPackage, build_llm_prompt_package_from_research_plan, render_llm_prompt_package_markdown
@@ -617,6 +618,59 @@ def _resolve_brain_chat_session_path(
         return cwd / "brain-chat-session.json"
 
     return None
+
+
+@app.command("brain-chat-session-next-step")
+def brain_chat_session_next_step_command(
+    session_file: Path | None = typer.Argument(None, help="Path to brain-chat-session JSON. Defaults to ./brain-chat-session.json."),
+    output_file: Path | None = typer.Option(None, "--output-file", "--output", help="Optional Markdown output path."),
+    json_output: Path | None = typer.Option(None, "--json-output", help="Optional JSON output path."),
+):
+    """Build a planning-only next-step plan from a local brain-chat session."""
+    resolved_session_file = session_file or Path("brain-chat-session.json")
+
+    if not resolved_session_file.exists():
+        console.print(f"[bold red]Brain chat session JSON not found:[/bold red] {resolved_session_file}")
+        raise typer.Exit(code=1)
+
+    session = load_brain_chat_session(resolved_session_file)
+    plan = build_brain_chat_session_next_step_plan(session)
+    markdown = plan.to_markdown()
+    data = plan.to_dict()
+
+    table = Table(title="Brain Chat Session Next-Step Plan")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Session", str(resolved_session_file))
+    table.add_row("Recommendation", plan.recommendation)
+    table.add_row("Focus endpoint", plan.current_focus_endpoint or "none")
+    table.add_row("Current blocker", plan.current_blocker)
+    table.add_row("Next question", plan.next_question)
+    table.add_row("Next evidence items", str(len(plan.next_evidence)))
+    table.add_row("Do-not-do items", str(len(plan.do_not_do_yet)))
+    table.add_row("Tool execution", "false")
+    table.add_row("Vulnerability confirmation", "false")
+    console.print(table)
+
+    if plan.next_evidence:
+        console.print("[bold yellow]Next evidence:[/bold yellow]")
+        for item in plan.next_evidence:
+            console.print(f"- {item}")
+
+    if output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text(markdown, encoding="utf-8")
+        console.print(f"[bold green]Saved brain chat next-step Markdown:[/bold green] {output_file}")
+
+    if json_output:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"[bold green]Saved brain chat next-step JSON:[/bold green] {json_output}")
+
+    console.print(
+        "[bold yellow]Safety:[/bold yellow] This command only builds a local planning packet from chat history. "
+        "It does not call providers, execute tools, send requests, or confirm vulnerabilities."
+    )
 
 
 @app.command("brain-chat-session-summary")
